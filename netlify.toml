@@ -1,0 +1,24 @@
+# Realtywize — Netlify configuration
+
+[build]
+  publish = "."
+
+# Pretty URLs: /app serves app/index.html automatically.
+# Explicit redirect kept for clarity and to handle /app/ too.
+[[redirects]]
+  from = "/app"
+  to = "/app/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/app/"
+  to = "/app/index.html"
+  status = 200
+
+# Security + caching headers
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"

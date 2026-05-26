@@ -1,0 +1,2974 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Realtywize Command Center — AI for Real Estate Agents</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #000000;
+    --black-soft: #050810;
+    --bg-app: #0a0f1c;
+    --bg-sidebar: #0d1424;
+    --bg-card: #131b2e;
+    --bg-elevated: #1a2540;
+    --bg-hover: #1f2c4d;
+    --cyan: #00d4ff;
+    --cyan-bright: #4ee2ff;
+    --cyan-dim: #0099cc;
+    --cyan-glow: rgba(0, 212, 255, 0.4);
+    --cyan-soft: rgba(0, 212, 255, 0.1);
+    --cyan-border: rgba(0, 212, 255, 0.25);
+    --white: #ffffff;
+    --text-bright: #e8f4ff;
+    --text-mid: #8a99b3;
+    --text-dim: #4d5a72;
+    --border: rgba(138, 153, 179, 0.12);
+    --border-bright: rgba(0, 212, 255, 0.3);
+    --hot: #ff5e7a;
+    --hot-bg: rgba(255, 94, 122, 0.15);
+    --warm: #ffb547;
+    --warm-bg: rgba(255, 181, 71, 0.15);
+    --cold: #6088b8;
+    --cold-bg: rgba(96, 136, 184, 0.15);
+    --green: #2dd4a0;
+    --green-bg: rgba(45, 212, 160, 0.15);
+    --purple: #a78bfa;
+    --purple-bg: rgba(167, 139, 250, 0.15);
+    --pink: #f472b6;
+    --pink-bg: rgba(244, 114, 182, 0.15);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    font-family: 'Sora', -apple-system, sans-serif;
+    background: var(--bg-app);
+    color: var(--text-bright);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+
+  /* ============ LAYOUT ============ */
+  .app {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    height: 100vh;
+  }
+
+  /* ============ SIDEBAR ============ */
+  .sidebar {
+    background: var(--bg-sidebar);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .sidebar::-webkit-scrollbar { width: 4px; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .sb-brand {
+    padding: 1.5rem 1.5rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .sb-brand .logo-text {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--white);
+    letter-spacing: 0.02em;
+  }
+  .sb-brand .logo-text span { color: var(--cyan); }
+
+  .sb-nav {
+    padding: 1.25rem 0.75rem;
+    flex: 1;
+  }
+  .sb-section-label {
+    padding: 0.5rem 1rem;
+    font-size: 0.68rem;
+    color: var(--text-dim);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .sb-item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.75rem 1rem;
+    background: transparent;
+    border: none;
+    color: var(--text-mid);
+    font-family: 'Sora', sans-serif;
+    font-size: 0.92rem;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: 8px;
+    margin-bottom: 0.2rem;
+    transition: all 0.15s;
+    text-align: left;
+  }
+  .sb-item:hover {
+    background: var(--bg-hover);
+    color: var(--text-bright);
+  }
+  .sb-item.active {
+    background: var(--cyan);
+    color: var(--black);
+    font-weight: 600;
+    box-shadow: 0 0 16px rgba(0, 212, 255, 0.3);
+  }
+  .sb-item.active .sb-icon { color: var(--black); }
+  .sb-soon { opacity: 0.5; }
+  .sb-soon:hover { opacity: 0.75; }
+  .sb-tag {
+    margin-left: auto;
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    background: rgba(255,255,255,0.08);
+    color: var(--text-mid);
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+  }
+  .sb-item.active .sb-tag { background: rgba(0,0,0,0.2); color: rgba(0,0,0,0.6); }
+  .sb-icon {
+    width: 18px; height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+
+  .sb-user {
+    padding: 1rem 1.25rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .sb-avatar {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--cyan), var(--purple));
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--white);
+    font-weight: 700;
+    font-size: 0.9rem;
+  }
+  .sb-user-text { flex: 1; min-width: 0; }
+  .sb-user-name { font-size: 0.88rem; color: var(--white); font-weight: 600; }
+  .sb-user-role { font-size: 0.72rem; color: var(--text-mid); }
+
+  /* ============ MAIN CONTENT ============ */
+  .main {
+    overflow-y: auto;
+    background: var(--bg-app);
+  }
+  .main::-webkit-scrollbar { width: 8px; }
+  .main::-webkit-scrollbar-thumb { background: var(--border); border-radius: 8px; }
+
+  .topbar {
+    padding: 1.25rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    background: rgba(10, 15, 28, 0.85);
+    backdrop-filter: blur(20px);
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+  .topbar h1 {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: var(--white);
+    letter-spacing: -0.01em;
+  }
+  .topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .date-pill {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.55rem 1rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-bright);
+    font-size: 0.82rem;
+    cursor: pointer;
+  }
+  .back-link {
+    color: var(--text-mid);
+    text-decoration: none;
+    font-size: 0.85rem;
+    padding: 0.5rem 0.85rem;
+    border-radius: 8px;
+    transition: all 0.2s;
+  }
+  .back-link:hover { color: var(--cyan); background: var(--cyan-soft); }
+
+  .content {
+    padding: 2rem;
+  }
+
+  /* ============ VIEW SWITCHING ============ */
+  .view { display: none; }
+  .view.active { display: block; animation: fadeIn 0.25s ease; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ============ KPI CARDS ============ */
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .kpi-card {
+    padding: 1.25rem 1.5rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: all 0.2s;
+  }
+  .kpi-card:hover { border-color: var(--cyan-border); transform: translateY(-2px); }
+  .kpi-icon-lg {
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem;
+    flex-shrink: 0;
+  }
+  .kpi-icon-lg.cyan { background: var(--cyan-soft); color: var(--cyan); }
+  .kpi-icon-lg.green { background: var(--green-bg); color: var(--green); }
+  .kpi-icon-lg.purple { background: var(--purple-bg); color: var(--purple); }
+  .kpi-icon-lg.warm { background: var(--warm-bg); color: var(--warm); }
+  .kpi-num-lg { font-size: 1.85rem; font-weight: 700; color: var(--white); line-height: 1; }
+  .kpi-label-lg { font-size: 0.78rem; color: var(--text-mid); margin-top: 0.3rem; }
+  .kpi-change-lg { font-size: 0.72rem; color: var(--green); margin-top: 0.2rem; font-weight: 500; }
+
+  /* ============ DASHBOARD GRID ============ */
+  .dash-row {
+    display: grid;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  .dash-row.r1 { grid-template-columns: 1fr 1.4fr 1fr; }
+  .dash-row.r2 { grid-template-columns: 1.4fr 1fr 1fr; }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+  }
+  .card-h {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.1rem;
+  }
+  .card-title {
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-mid);
+    font-weight: 600;
+  }
+  .card-filter {
+    padding: 0.3rem 0.65rem;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.74rem;
+    color: var(--text-bright);
+    cursor: pointer;
+  }
+
+  /* Lead Sources Donut */
+  .donut-wrap {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+  }
+  .donut {
+    width: 130px; height: 130px;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .donut svg { transform: rotate(-90deg); }
+  .donut-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .donut-center .big { font-size: 1.5rem; font-weight: 700; color: var(--white); line-height: 1; }
+  .donut-center .lbl { font-size: 0.7rem; color: var(--text-mid); margin-top: 0.2rem; }
+  .donut-legend { flex: 1; }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.3rem 0;
+    font-size: 0.82rem;
+  }
+  .legend-item .left {
+    display: flex; align-items: center; gap: 0.5rem;
+    color: var(--text-bright);
+  }
+  .legend-item .left::before {
+    content: '';
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--clr);
+  }
+  .legend-item .right { color: var(--text-mid); font-weight: 600; }
+
+  /* Activity chart */
+  .chart-svg { width: 100%; height: 140px; }
+  .chart-labels {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    text-align: center;
+    margin-top: 0.5rem;
+  }
+  .chart-peak {
+    position: absolute;
+    background: var(--bg-elevated);
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    color: var(--white);
+    border: 1px solid var(--cyan-border);
+    pointer-events: none;
+  }
+  .chart-peak .v { color: var(--cyan); font-weight: 600; }
+
+  /* Conversations */
+  .conv-list { display: flex; flex-direction: column; gap: 0.6rem; max-height: 220px; overflow-y: auto; }
+  .conv-list::-webkit-scrollbar { width: 4px; }
+  .conv-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  .conv-item {
+    display: flex;
+    gap: 0.75rem;
+    padding: 0.65rem;
+    background: var(--bg-elevated);
+    border-radius: 8px;
+    align-items: center;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .conv-item:hover { background: var(--bg-hover); }
+  .conv-avatar {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--white);
+    font-size: 0.78rem;
+    font-weight: 600;
+  }
+  .conv-text { flex: 1; min-width: 0; }
+  .conv-name-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 0.15rem;
+  }
+  .conv-name { font-size: 0.85rem; color: var(--white); font-weight: 600; }
+  .conv-time { font-size: 0.7rem; color: var(--text-dim); }
+  .conv-msg {
+    font-size: 0.76rem;
+    color: var(--text-mid);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .conv-status {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+    flex-shrink: 0;
+  }
+  .view-all-btn {
+    width: 100%;
+    margin-top: 0.85rem;
+    padding: 0.65rem;
+    background: transparent;
+    border: 1px solid var(--cyan-border);
+    color: var(--cyan);
+    border-radius: 8px;
+    font-family: 'Sora', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .view-all-btn:hover { background: var(--cyan-soft); }
+
+  /* Pipeline */
+  .pipeline-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.85rem;
+    margin-top: 0.5rem;
+  }
+  .pipe-stage {
+    padding: 0.85rem;
+    background: var(--bg-elevated);
+    border-radius: 8px;
+    text-align: left;
+  }
+  .pipe-stage .ps-name {
+    font-size: 0.78rem;
+    color: var(--text-mid);
+    margin-bottom: 0.45rem;
+    font-weight: 500;
+  }
+  .pipe-stage .ps-count {
+    font-size: 1.05rem;
+    color: var(--white);
+    font-weight: 600;
+    margin-bottom: 0.15rem;
+  }
+  .pipe-stage .ps-val {
+    font-size: 0.85rem;
+    color: var(--cyan);
+    font-weight: 600;
+    margin-bottom: 0.65rem;
+  }
+  .pipe-bar {
+    height: 4px;
+    border-radius: 2px;
+    background: var(--bg-card);
+    overflow: hidden;
+  }
+  .pipe-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--cyan), var(--cyan-bright));
+    border-radius: 2px;
+  }
+  .pipe-stage:last-child .pipe-bar-fill { background: linear-gradient(90deg, var(--green), #1aa67d); }
+
+  /* Recent Deals table */
+  .deal-row {
+    display: grid;
+    grid-template-columns: 1fr 100px 130px;
+    gap: 0.85rem;
+    padding: 0.75rem 0.5rem;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+    font-size: 0.85rem;
+  }
+  .deal-row:last-child { border-bottom: none; }
+  .deal-row .da { color: var(--white); font-weight: 500; }
+  .deal-row .dp { color: var(--white); font-weight: 600; }
+  .deal-row .ds {
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-align: center;
+  }
+  .ds.under-contract { background: var(--green-bg); color: var(--green); }
+  .ds.proposal { background: var(--warm-bg); color: var(--warm); }
+  .ds.new { background: var(--cyan-soft); color: var(--cyan); }
+  .ds.showing { background: var(--purple-bg); color: var(--purple); }
+
+  /* AI Assistant box */
+  .ai-asst {
+    background: linear-gradient(135deg, rgba(0, 212, 255, 0.06), var(--bg-card));
+    border: 1px solid var(--cyan-border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    box-shadow: 0 0 24px rgba(0, 212, 255, 0.06);
+  }
+  .ai-h {
+    display: flex; align-items: center; gap: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+  .ai-icon {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: var(--cyan);
+    color: var(--black);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem;
+    font-weight: 700;
+    box-shadow: 0 0 16px rgba(0, 212, 255, 0.4);
+  }
+  .ai-h h3 { color: var(--white); font-size: 1.05rem; font-weight: 600; }
+  .ai-sub { font-size: 0.82rem; color: var(--text-mid); margin-bottom: 1rem; }
+  .ai-suggest {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    margin-bottom: 1rem;
+  }
+  .ai-chip {
+    padding: 0.6rem 0.9rem;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-bright);
+    font-size: 0.82rem;
+    cursor: pointer;
+    text-align: left;
+    display: flex; align-items: center; gap: 0.5rem;
+    transition: all 0.2s;
+    font-family: 'Sora', sans-serif;
+  }
+  .ai-chip:hover { border-color: var(--cyan-border); background: var(--bg-hover); }
+  .ai-chip-icon { color: var(--cyan); }
+  .ai-input-wrap {
+    display: flex; gap: 0.5rem;
+    padding: 0.4rem 0.4rem 0.4rem 1rem;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+  }
+  .ai-input-wrap input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--white);
+    font-family: 'Sora', sans-serif;
+    font-size: 0.85rem;
+    outline: none;
+  }
+  .ai-input-wrap input::placeholder { color: var(--text-dim); }
+  .ai-send {
+    width: 32px; height: 32px;
+    background: var(--cyan);
+    color: var(--black);
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+  }
+  .ai-send:hover { background: var(--cyan-bright); }
+
+  /* Tasks */
+  .task-list { display: flex; flex-direction: column; gap: 0.55rem; }
+  .task-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.65rem 0.4rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .task-item:last-child { border-bottom: none; }
+  .task-check {
+    width: 18px; height: 18px;
+    border: 1.5px solid var(--text-dim);
+    border-radius: 50%;
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .task-check.done {
+    background: var(--cyan);
+    border-color: var(--cyan);
+    position: relative;
+  }
+  .task-check.done::after {
+    content: '✓';
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--black);
+    font-size: 0.7rem;
+    font-weight: 700;
+  }
+  .task-text { flex: 1; font-size: 0.85rem; color: var(--text-bright); }
+  .task-text.done { color: var(--text-dim); text-decoration: line-through; }
+  .task-time { font-size: 0.74rem; color: var(--text-mid); }
+
+  /* ============ AI TOOLS VIEW ============ */
+  .tool-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .tool-tab {
+    padding: 0.85rem 1.4rem;
+    background: transparent;
+    border: none;
+    color: var(--text-mid);
+    font-family: 'Sora', sans-serif;
+    font-size: 0.92rem;
+    font-weight: 500;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: all 0.2s;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .tool-tab:hover { color: var(--white); }
+  .tool-tab.active {
+    color: var(--cyan);
+    border-bottom-color: var(--cyan);
+  }
+
+  .tool-panel { display: none; }
+  .tool-panel.active { display: block; }
+  .tool-panel-header { margin-bottom: 1.5rem; }
+  .tool-panel-header h2 {
+    font-size: 1.5rem;
+    color: var(--white);
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+    letter-spacing: -0.01em;
+  }
+  .tool-panel-header p { color: var(--text-mid); font-size: 0.9rem; max-width: 700px; }
+
+  .work-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+  }
+  .work-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+  }
+  .card-label {
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+
+  label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-mid);
+    margin-bottom: 0.5rem;
+    letter-spacing: 0.04em;
+  }
+  textarea, input[type="text"], input[type="number"], select {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--white);
+    font-family: 'Sora', sans-serif;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    transition: border-color 0.2s;
+  }
+  textarea:focus, input:focus, select:focus {
+    outline: none;
+    border-color: var(--cyan);
+    box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+  }
+  textarea {
+    min-height: 150px;
+    resize: vertical;
+    line-height: 1.55;
+  }
+  .input-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.65rem;
+  }
+
+  .btn-analyze {
+    width: 100%;
+    padding: 0.95rem;
+    background: var(--cyan);
+    color: var(--black);
+    border: none;
+    border-radius: 10px;
+    font-family: 'Sora', sans-serif;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    box-shadow: 0 0 16px rgba(0, 212, 255, 0.25);
+  }
+  .btn-analyze:hover:not(:disabled) {
+    background: var(--cyan-bright);
+    box-shadow: 0 0 28px rgba(0, 212, 255, 0.4);
+  }
+  .btn-analyze:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .result-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    min-height: 320px;
+    color: var(--text-dim);
+    text-align: center;
+    gap: 0.75rem;
+  }
+  .result-placeholder .icon { font-size: 2.5rem; opacity: 0.4; }
+  .result-placeholder p { font-size: 0.88rem; }
+
+  /* ============ DEAL FINDER ============ */
+  .df-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .df-title {
+    font-family: var(--font-display);
+    font-size: 1.6rem;
+    font-weight: 600;
+    color: var(--white);
+    margin-bottom: 0.4rem;
+    letter-spacing: -0.01em;
+  }
+  .df-sub {
+    color: var(--text-mid);
+    font-size: 0.9rem;
+    max-width: 700px;
+  }
+  .df-badge {
+    background: rgba(255, 200, 50, 0.12);
+    color: #ffd166;
+    border: 1px solid rgba(255, 200, 50, 0.3);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    padding: 0.4rem 0.7rem;
+    border-radius: 6px;
+    white-space: nowrap;
+    font-family: var(--font-mono);
+  }
+  .df-search-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.25rem;
+    margin-bottom: 1.25rem;
+  }
+  .df-search-row {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+  .df-search-input {
+    flex: 1;
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    color: var(--white);
+    padding: 0.9rem 1rem;
+    font-size: 0.95rem;
+    border-radius: 10px;
+    font-family: inherit;
+    transition: border-color 0.2s;
+  }
+  .df-search-input:focus {
+    outline: none;
+    border-color: var(--cyan);
+  }
+  .df-search-input::placeholder { color: var(--text-mid); }
+  .df-search-btn {
+    margin-top: 0;
+    white-space: nowrap;
+    width: auto;
+    padding: 0.9rem 1.5rem;
+  }
+  .df-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+  }
+  .df-filter-label {
+    color: var(--text-mid);
+    font-size: 0.8rem;
+    margin-right: 0.5rem;
+  }
+  .df-chip {
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    color: var(--text-light);
+    padding: 0.45rem 0.85rem;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+  .df-chip:hover {
+    border-color: var(--cyan);
+    color: var(--white);
+  }
+  .df-chip.active {
+    background: var(--cyan-soft);
+    border-color: var(--cyan);
+    color: var(--cyan-bright);
+  }
+  .df-status {
+    margin-top: 0.85rem;
+    font-size: 0.82rem;
+    color: var(--text-mid);
+    min-height: 1rem;
+  }
+  .df-status.error { color: #ff6b6b; }
+  .df-results-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.25rem;
+  }
+  .df-results-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .df-results-title {
+    font-size: 1.05rem;
+    color: var(--white);
+    font-weight: 600;
+    margin-bottom: 0.2rem;
+  }
+  .df-results-count {
+    color: var(--text-mid);
+    font-size: 0.82rem;
+  }
+  .df-results-sort {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .df-results-sort label {
+    color: var(--text-mid);
+    font-size: 0.82rem;
+  }
+  .df-results-sort select {
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    color: var(--white);
+    padding: 0.45rem 0.7rem;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+  .df-table-wrap {
+    overflow-x: auto;
+    margin: 0 -0.5rem;
+  }
+  .df-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+  .df-table th {
+    text-align: left;
+    color: var(--text-mid);
+    font-weight: 500;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 0.7rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .df-table td {
+    padding: 0.95rem 0.75rem;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    color: var(--text-light);
+    vertical-align: middle;
+  }
+  .df-table tr {
+    transition: background 0.15s;
+  }
+  .df-table tbody tr:hover {
+    background: rgba(0, 212, 255, 0.04);
+    cursor: pointer;
+  }
+  .df-addr {
+    color: var(--white);
+    font-weight: 500;
+  }
+  .df-addr-sub {
+    color: var(--text-mid);
+    font-size: 0.75rem;
+    margin-top: 0.15rem;
+  }
+  .df-signals {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+  }
+  .df-signal {
+    font-size: 0.68rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+  }
+  .df-signal.foreclosure { background: rgba(255,80,80,0.12); color: #ff8585; border: 1px solid rgba(255,80,80,0.25); }
+  .df-signal.absentee { background: rgba(255,200,50,0.12); color: #ffd166; border: 1px solid rgba(255,200,50,0.25); }
+  .df-signal.tax { background: rgba(255,140,50,0.12); color: #ffb066; border: 1px solid rgba(255,140,50,0.25); }
+  .df-signal.equity { background: rgba(80,255,140,0.12); color: #6affa0; border: 1px solid rgba(80,255,140,0.25); }
+  .df-signal.probate { background: rgba(180,120,255,0.12); color: #c9a3ff; border: 1px solid rgba(180,120,255,0.25); }
+  .df-signal.expired { background: rgba(200,200,200,0.12); color: #cccccc; border: 1px solid rgba(200,200,200,0.25); }
+  .df-signal.vacant { background: rgba(120,160,255,0.12); color: #95b6ff; border: 1px solid rgba(120,160,255,0.25); }
+  .df-signal.code { background: rgba(255,100,180,0.12); color: #ff95c2; border: 1px solid rgba(255,100,180,0.25); }
+
+  .df-owner-tag {
+    display: inline-block;
+    font-size: 0.65rem;
+    padding: 0.15rem 0.4rem;
+    border-radius: 3px;
+    background: rgba(255,200,50,0.12);
+    color: #ffd166;
+    margin-left: 0.35rem;
+    font-family: var(--font-mono);
+    letter-spacing: 0.03em;
+  }
+  .df-score {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 1.05rem;
+    font-family: var(--font-mono);
+  }
+  .df-score.a { background: rgba(80,255,140,0.15); color: #6affa0; border: 1px solid rgba(80,255,140,0.4); }
+  .df-score.b { background: rgba(0,212,255,0.12); color: var(--cyan-bright); border: 1px solid rgba(0,212,255,0.35); }
+  .df-score.c { background: rgba(255,200,50,0.12); color: #ffd166; border: 1px solid rgba(255,200,50,0.3); }
+  .df-score.d { background: rgba(255,140,50,0.12); color: #ffb066; border: 1px solid rgba(255,140,50,0.3); }
+  .df-score.f { background: rgba(255,80,80,0.1); color: #ff8585; border: 1px solid rgba(255,80,80,0.25); }
+  .df-score.pending { background: rgba(120,120,120,0.1); color: var(--text-mid); border: 1px solid var(--border); font-size: 0.7rem; }
+
+  .df-row-actions {
+    display: flex;
+    gap: 0.4rem;
+  }
+  .df-action-btn {
+    background: rgba(0,212,255,0.08);
+    border: 1px solid rgba(0,212,255,0.25);
+    color: var(--cyan-bright);
+    padding: 0.4rem 0.65rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .df-action-btn:hover {
+    background: rgba(0,212,255,0.15);
+    border-color: var(--cyan);
+  }
+
+  /* Drawer */
+  .df-drawer-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .df-drawer-backdrop.active { opacity: 1; pointer-events: auto; }
+  .df-drawer {
+    position: fixed;
+    top: 0; right: 0;
+    width: min(560px, 100vw);
+    height: 100vh;
+    background: var(--bg-card);
+    border-left: 1px solid var(--border);
+    z-index: 101;
+    transform: translateX(100%);
+    transition: transform 0.25s ease;
+    overflow-y: auto;
+    padding: 1.5rem;
+  }
+  .df-drawer.active { transform: translateX(0); }
+  .df-drawer-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-light);
+    width: 32px; height: 32px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    z-index: 2;
+  }
+  .df-drawer-close:hover { background: var(--bg-deep); color: var(--white); }
+
+  .dd-section { margin-bottom: 1.5rem; }
+  .dd-label {
+    font-size: 0.7rem;
+    color: var(--cyan-bright);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.5rem;
+    font-family: var(--font-mono);
+  }
+  .dd-addr-big {
+    font-family: var(--font-display);
+    font-size: 1.3rem;
+    color: var(--white);
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+  }
+  .dd-addr-loc {
+    color: var(--text-mid);
+    font-size: 0.85rem;
+    margin-bottom: 1rem;
+  }
+  .dd-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+  }
+  .dd-stat {
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.7rem 0.8rem;
+  }
+  .dd-stat-label {
+    color: var(--text-mid);
+    font-size: 0.72rem;
+    margin-bottom: 0.25rem;
+  }
+  .dd-stat-val {
+    color: var(--white);
+    font-weight: 600;
+    font-size: 0.95rem;
+    font-family: var(--font-mono);
+  }
+  .dd-brief {
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--cyan);
+    border-radius: 8px;
+    padding: 0.9rem 1rem;
+    color: var(--text-light);
+    font-size: 0.88rem;
+    line-height: 1.55;
+  }
+  .dd-signal-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .dd-signal-item {
+    display: flex;
+    gap: 0.6rem;
+    align-items: flex-start;
+    padding: 0.6rem 0.8rem;
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    color: var(--text-light);
+  }
+  .dd-signal-item strong { color: var(--white); }
+
+  .dd-outreach-tabs {
+    display: flex;
+    gap: 0.4rem;
+    margin-bottom: 0.7rem;
+  }
+  .dd-otab {
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    color: var(--text-light);
+    padding: 0.4rem 0.75rem;
+    font-size: 0.78rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .dd-otab.active {
+    background: var(--cyan-soft);
+    border-color: var(--cyan);
+    color: var(--cyan-bright);
+  }
+  .dd-outreach-body {
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    font-size: 0.87rem;
+    line-height: 1.6;
+    color: var(--text-light);
+    white-space: pre-wrap;
+    margin-bottom: 0.6rem;
+    max-height: 280px;
+    overflow-y: auto;
+  }
+  .dd-outreach-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+  .dd-btn {
+    background: rgba(0,212,255,0.1);
+    border: 1px solid rgba(0,212,255,0.3);
+    color: var(--cyan-bright);
+    padding: 0.55rem 0.9rem;
+    border-radius: 7px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  .dd-btn:hover {
+    background: rgba(0,212,255,0.18);
+    border-color: var(--cyan);
+  }
+  .dd-btn.primary {
+    background: var(--cyan);
+    border-color: var(--cyan);
+    color: var(--black);
+    font-weight: 600;
+  }
+  .dd-btn.primary:hover { background: var(--cyan-bright); }
+  .dd-loading {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: var(--text-mid);
+    font-size: 0.85rem;
+    padding: 0.8rem 0;
+  }
+  .dd-loading::before {
+    content: '';
+    width: 14px; height: 14px;
+    border: 2px solid var(--border);
+    border-top-color: var(--cyan);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  @media (max-width: 720px) {
+    .df-search-row { flex-direction: column; }
+    .df-search-btn { width: 100%; padding: 0.85rem; }
+    .df-header { flex-direction: column; gap: 0.75rem; }
+    .df-table { font-size: 0.78rem; }
+    .df-table th, .df-table td { padding: 0.65rem 0.5rem; }
+    .df-drawer { width: 100vw; padding: 1rem; }
+    .dd-stats { grid-template-columns: 1fr 1fr; }
+  }
+
+  .loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    min-height: 280px;
+    gap: 1rem;
+  }
+  .loading .spinner {
+    width: 36px; height: 36px;
+    border: 2px solid var(--border);
+    border-top-color: var(--cyan);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    box-shadow: 0 0 16px rgba(0, 212, 255, 0.2);
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading p { color: var(--text-mid); font-size: 0.88rem; }
+
+  /* Scoring results */
+  .score-display {
+    text-align: center;
+    padding: 1.25rem;
+    background: var(--bg-elevated);
+    border-radius: 10px;
+    margin-bottom: 1.25rem;
+    border: 1px solid var(--border);
+  }
+  .score-badge {
+    display: inline-block;
+    padding: 0.45rem 1.25rem;
+    border-radius: 999px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.6rem;
+  }
+  .score-badge.hot { background: var(--hot-bg); color: var(--hot); }
+  .score-badge.warm { background: var(--warm-bg); color: var(--warm); }
+  .score-badge.cold { background: var(--cold-bg); color: var(--cold); }
+  .score-confidence { color: var(--text-mid); font-size: 0.82rem; }
+  .score-confidence strong { color: var(--white); font-weight: 600; }
+
+  .result-section {
+    margin-bottom: 1.1rem;
+    padding-bottom: 1.1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .result-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+  .result-section h4 {
+    font-size: 0.72rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    font-weight: 600;
+    margin-bottom: 0.45rem;
+  }
+  .result-section p {
+    color: var(--text-bright);
+    font-size: 0.92rem;
+    line-height: 1.6;
+  }
+  .reply-box {
+    background: var(--bg-elevated);
+    border: 1px solid var(--cyan-border);
+    border-radius: 8px;
+    padding: 0.95rem;
+    font-style: italic;
+    color: var(--text-bright);
+    font-size: 0.88rem;
+    line-height: 1.6;
+  }
+  .copy-btn {
+    margin-top: 0.5rem;
+    padding: 0.35rem 0.9rem;
+    background: transparent;
+    border: 1px solid var(--cyan-border);
+    color: var(--cyan);
+    border-radius: 999px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    font-family: 'Sora', sans-serif;
+    transition: all 0.2s;
+  }
+  .copy-btn:hover { background: var(--cyan-soft); }
+
+  /* Valuation results */
+  .val-display {
+    text-align: center;
+    padding: 2.25rem 1.5rem;
+    background: linear-gradient(135deg, rgba(0, 212, 255, 0.08), var(--bg-elevated));
+    border: 1px solid var(--cyan-border);
+    border-radius: 12px;
+    margin-bottom: 1.25rem;
+  }
+  .val-label { font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-mid); margin-bottom: 0.65rem; }
+  .val-price {
+    font-size: 3.25rem;
+    color: var(--cyan);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    margin-bottom: 0.45rem;
+    text-shadow: 0 0 24px rgba(0, 212, 255, 0.3);
+  }
+  .val-range { color: var(--text-mid); font-size: 0.9rem; }
+
+  /* Investor results */
+  .deal-display {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1.25rem;
+    padding: 1.5rem;
+    background: var(--bg-elevated);
+    border-radius: 12px;
+    margin-bottom: 1.25rem;
+    border: 1px solid var(--border);
+    align-items: center;
+  }
+  .grade-circle {
+    width: 88px; height: 88px;
+    border-radius: 50%;
+    background: var(--bg-card);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 3rem;
+    font-weight: 700;
+    border: 3px solid;
+  }
+  .grade-circle.a { color: var(--green); border-color: var(--green); box-shadow: 0 0 24px rgba(45, 212, 160, 0.3); }
+  .grade-circle.b { color: var(--cyan); border-color: var(--cyan); box-shadow: 0 0 24px rgba(0, 212, 255, 0.3); }
+  .grade-circle.c { color: var(--warm); border-color: var(--warm); }
+  .grade-circle.d { color: var(--hot); border-color: var(--hot); }
+  .grade-circle.f { color: var(--hot); border-color: var(--hot); opacity: 0.7; }
+  .grade-text h3 {
+    font-size: 1.2rem;
+    color: var(--white);
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+  }
+  .grade-text p { color: var(--text-mid); font-size: 0.88rem; }
+
+  .metric-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.65rem;
+    margin-bottom: 1.25rem;
+  }
+  .metric-tile {
+    padding: 0.95rem;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+  .metric-tile .m-label {
+    font-size: 0.68rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-mid);
+    margin-bottom: 0.3rem;
+  }
+  .metric-tile .m-value {
+    font-size: 1.3rem;
+    color: var(--cyan);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .metric-tile .m-value.neg { color: var(--hot); }
+
+  .error {
+    background: rgba(255, 94, 122, 0.1);
+    border: 1px solid rgba(255, 94, 122, 0.3);
+    color: var(--hot);
+    padding: 0.85rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    margin-top: 0.85rem;
+  }
+  .sample-buttons {
+    display: flex; gap: 0.45rem; flex-wrap: wrap;
+    margin-bottom: 1rem;
+  }
+  .sample-btn {
+    padding: 0.4rem 0.85rem;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    color: var(--text-mid);
+    border-radius: 999px;
+    font-size: 0.76rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Sora', sans-serif;
+  }
+  .sample-btn:hover {
+    border-color: var(--cyan-border);
+    color: var(--cyan);
+    background: var(--cyan-soft);
+  }
+
+  /* ============ EMPTY VIEW (for placeholder tabs) ============ */
+  .empty-view {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    text-align: center;
+    color: var(--text-mid);
+  }
+  .empty-view .ev-icon {
+    width: 80px; height: 80px;
+    border-radius: 20px;
+    background: var(--cyan-soft);
+    border: 1px solid var(--cyan-border);
+    color: var(--cyan);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2.25rem;
+    margin-bottom: 1.5rem;
+  }
+  .empty-view h2 {
+    font-size: 1.5rem;
+    color: var(--white);
+    font-weight: 600;
+    margin-bottom: 0.65rem;
+  }
+  .empty-view p { font-size: 0.95rem; max-width: 480px; margin-bottom: 1.5rem; }
+  .empty-view .pill {
+    display: inline-block;
+    padding: 0.4rem 1rem;
+    background: var(--cyan-soft);
+    border: 1px solid var(--cyan-border);
+    border-radius: 999px;
+    color: var(--cyan);
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  /* ============ RESPONSIVE ============ */
+  @media (max-width: 1280px) {
+    .dash-row.r1, .dash-row.r2 { grid-template-columns: 1fr 1fr; }
+    .dash-row.r2 .card:last-child { grid-column: span 2; }
+  }
+  @media (max-width: 1024px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar {
+      position: fixed;
+      top: 0; left: 0;
+      width: 260px;
+      height: 100vh;
+      z-index: 100;
+      transform: translateX(-100%);
+      transition: transform 0.3s;
+    }
+    .sidebar.open { transform: translateX(0); }
+    .menu-btn { display: flex !important; }
+    .kpi-row { grid-template-columns: repeat(2, 1fr); }
+    .dash-row.r1, .dash-row.r2 { grid-template-columns: 1fr; }
+    .dash-row.r2 .card:last-child { grid-column: auto; }
+    .pipeline-grid { grid-template-columns: repeat(2, 1fr); }
+    .work-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 640px) {
+    .topbar { padding: 1rem; flex-wrap: wrap; gap: 0.75rem; }
+    .topbar h1 { font-size: 1.15rem; }
+    .content { padding: 1.25rem; }
+    .kpi-row { grid-template-columns: 1fr; }
+    .pipeline-grid { grid-template-columns: 1fr; }
+    .deal-display { grid-template-columns: 1fr; text-align: center; }
+    .grade-circle { margin: 0 auto; }
+    .metric-grid { grid-template-columns: 1fr; }
+    .date-pill { display: none; }
+  }
+  .menu-btn {
+    display: none;
+    width: 38px; height: 38px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--white);
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-brand">
+      <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
+        <defs>
+          <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#4ee2ff"/>
+            <stop offset="100%" stop-color="#0099cc"/>
+          </linearGradient>
+        </defs>
+        <path d="M6 18 L20 6 L34 18 L34 35 L24 35 L24 24 L16 24 L16 35 L6 35 Z" stroke="url(#logoGrad)" stroke-width="2.5" fill="none" stroke-linejoin="round"/>
+        <path d="M18 14 L24 14 L24 20 L18 20 Z M18 14 L18 22 M21 16 L24 16 M21 18 L24 18" stroke="url(#logoGrad)" stroke-width="2" fill="none" stroke-linejoin="round" stroke-linecap="round"/>
+      </svg>
+      <div class="logo-text">REALTY<span>WIZE</span></div>
+    </div>
+    <nav class="sb-nav">
+      <div class="sb-section-label">Workspace</div>
+      <button class="sb-item active" data-view="dashboard"><span class="sb-icon">🏠</span> Dashboard</button>
+      <button class="sb-item" data-view="deal-finder"><span class="sb-icon">🎯</span> Deal Finder</button>
+      <button class="sb-item" data-view="ai-tools"><span class="sb-icon">🤖</span> AI Assistant</button>
+      <div class="sb-section-label" style="margin-top: 1rem;">Coming Soon</div>
+      <button class="sb-item sb-soon" data-view="leads"><span class="sb-icon">👥</span> Leads <span class="sb-tag">Soon</span></button>
+      <button class="sb-item sb-soon" data-view="conversations"><span class="sb-icon">💬</span> Conversations <span class="sb-tag">Soon</span></button>
+      <button class="sb-item sb-soon" data-view="calendars"><span class="sb-icon">📅</span> Calendars <span class="sb-tag">Soon</span></button>
+      <button class="sb-item sb-soon" data-view="properties"><span class="sb-icon">🏘️</span> Properties <span class="sb-tag">Soon</span></button>
+      <button class="sb-item sb-soon" data-view="deals"><span class="sb-icon">💼</span> Deals <span class="sb-tag">Soon</span></button>
+      <button class="sb-item sb-soon" data-view="tasks"><span class="sb-icon">✓</span> Tasks <span class="sb-tag">Soon</span></button>
+      <button class="sb-item sb-soon" data-view="marketing"><span class="sb-icon">📣</span> Marketing <span class="sb-tag">Soon</span></button>
+      <button class="sb-item sb-soon" data-view="analytics"><span class="sb-icon">📊</span> Analytics <span class="sb-tag">Soon</span></button>
+      <button class="sb-item" data-view="settings" style="margin-top: 1rem;"><span class="sb-icon">⚙️</span> Settings</button>
+    </nav>
+    <div class="sb-user">
+      <div class="sb-avatar">AJ</div>
+      <div class="sb-user-text">
+        <div class="sb-user-name">Alex Johnson</div>
+        <div class="sb-user-role">Top Producer</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <main class="main">
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div style="display: flex; align-items: center; gap: 0.85rem;">
+        <button class="menu-btn" id="menuBtn">☰</button>
+        <h1 id="page-title">Dashboard</h1>
+      </div>
+      <div class="topbar-actions">
+        <div class="date-pill">📅 May 12 — May 19, 2026</div>
+        <a href="/" class="back-link">← Back to site</a>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ============ DASHBOARD VIEW ============ -->
+      <div class="view active" id="view-dashboard">
+        <!-- KPIs -->
+        <div class="kpi-row">
+          <div class="kpi-card">
+            <div class="kpi-icon-lg cyan">👥</div>
+            <div>
+              <div class="kpi-num-lg">247</div>
+              <div class="kpi-label-lg">New Leads</div>
+              <div class="kpi-change-lg">↑ 38% this week</div>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon-lg green">💬</div>
+            <div>
+              <div class="kpi-num-lg">183</div>
+              <div class="kpi-label-lg">Conversations</div>
+              <div class="kpi-change-lg">↑ 27% this week</div>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon-lg purple">📅</div>
+            <div>
+              <div class="kpi-num-lg">32</div>
+              <div class="kpi-label-lg">Appointments</div>
+              <div class="kpi-change-lg">↑ 18% this week</div>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon-lg warm">🏠</div>
+            <div>
+              <div class="kpi-num-lg">12</div>
+              <div class="kpi-label-lg">Deals Closed</div>
+              <div class="kpi-change-lg">↑ 20% this month</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ROW 1: Sources / Activity / Conversations -->
+        <div class="dash-row r1">
+
+          <!-- Lead Sources -->
+          <div class="card">
+            <div class="card-h">
+              <div class="card-title">Lead Sources</div>
+            </div>
+            <div class="donut-wrap">
+              <div class="donut">
+                <svg width="130" height="130" viewBox="0 0 36 36">
+                  <circle cx="18" cy="18" r="15.915" fill="none" stroke="#1a2540" stroke-width="3"></circle>
+                  <circle cx="18" cy="18" r="15.915" fill="none" stroke="#00d4ff" stroke-width="3" stroke-dasharray="35 65" stroke-dashoffset="25"></circle>
+                  <circle cx="18" cy="18" r="15.915" fill="none" stroke="#a78bfa" stroke-width="3" stroke-dasharray="28 72" stroke-dashoffset="-10"></circle>
+                  <circle cx="18" cy="18" r="15.915" fill="none" stroke="#2dd4a0" stroke-width="3" stroke-dasharray="20 80" stroke-dashoffset="-38"></circle>
+                  <circle cx="18" cy="18" r="15.915" fill="none" stroke="#ffb547" stroke-width="3" stroke-dasharray="10 90" stroke-dashoffset="-58"></circle>
+                  <circle cx="18" cy="18" r="15.915" fill="none" stroke="#f472b6" stroke-width="3" stroke-dasharray="7 93" stroke-dashoffset="-68"></circle>
+                </svg>
+                <div class="donut-center">
+                  <div class="big">247</div>
+                  <div class="lbl">Total</div>
+                </div>
+              </div>
+              <div class="donut-legend">
+                <div class="legend-item" style="--clr: #00d4ff"><span class="left">Facebook Ads</span><span class="right">35%</span></div>
+                <div class="legend-item" style="--clr: #a78bfa"><span class="left">Google Ads</span><span class="right">28%</span></div>
+                <div class="legend-item" style="--clr: #2dd4a0"><span class="left">Website</span><span class="right">20%</span></div>
+                <div class="legend-item" style="--clr: #ffb547"><span class="left">Zillow</span><span class="right">10%</span></div>
+                <div class="legend-item" style="--clr: #f472b6"><span class="left">Other</span><span class="right">7%</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Lead Activity Chart -->
+          <div class="card" style="position: relative;">
+            <div class="card-h">
+              <div class="card-title">Lead Activity</div>
+              <button class="card-filter">This Week ▾</button>
+            </div>
+            <svg class="chart-svg" viewBox="0 0 400 140" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="chartGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="#00d4ff" stop-opacity="0.4"/>
+                  <stop offset="100%" stop-color="#00d4ff" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <!-- Grid lines -->
+              <line x1="0" y1="35" x2="400" y2="35" stroke="#1a2540" stroke-width="1" stroke-dasharray="2 4"/>
+              <line x1="0" y1="70" x2="400" y2="70" stroke="#1a2540" stroke-width="1" stroke-dasharray="2 4"/>
+              <line x1="0" y1="105" x2="400" y2="105" stroke="#1a2540" stroke-width="1" stroke-dasharray="2 4"/>
+              <!-- Filled area -->
+              <path d="M 0 110 L 57 85 L 114 95 L 171 70 L 228 60 L 285 30 L 342 50 L 400 75 L 400 140 L 0 140 Z" fill="url(#chartGrad)"/>
+              <!-- Line -->
+              <path d="M 0 110 L 57 85 L 114 95 L 171 70 L 228 60 L 285 30 L 342 50 L 400 75" stroke="#00d4ff" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+              <!-- Points -->
+              <circle cx="0" cy="110" r="3" fill="#00d4ff"/>
+              <circle cx="57" cy="85" r="3" fill="#00d4ff"/>
+              <circle cx="114" cy="95" r="3" fill="#00d4ff"/>
+              <circle cx="171" cy="70" r="3" fill="#00d4ff"/>
+              <circle cx="228" cy="60" r="3" fill="#00d4ff"/>
+              <circle cx="285" cy="30" r="4" fill="#4ee2ff" stroke="#0a0f1c" stroke-width="2"/>
+              <circle cx="342" cy="50" r="3" fill="#00d4ff"/>
+              <circle cx="400" cy="75" r="3" fill="#00d4ff"/>
+            </svg>
+            <div class="chart-labels">
+              <div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div><div>Sun</div>
+            </div>
+            <div class="chart-peak" style="top: 50px; left: 65%;">
+              <div class="v">75 Leads</div>
+              <div style="font-size: 0.65rem; color: var(--text-mid);">Sat peak</div>
+            </div>
+          </div>
+
+          <!-- Conversations -->
+          <div class="card">
+            <div class="card-h">
+              <div class="card-title">Conversations</div>
+              <button class="card-filter">All ▾</button>
+            </div>
+            <div class="conv-list">
+              <div class="conv-item">
+                <div class="conv-avatar" style="background: linear-gradient(135deg, #00d4ff, #a78bfa);">JM</div>
+                <div class="conv-text">
+                  <div class="conv-name-row"><span class="conv-name">Jessica Moore</span><span class="conv-time">2m</span></div>
+                  <div class="conv-msg">Hi, I'm interested in 123 Main St...</div>
+                </div>
+                <div class="conv-status"></div>
+              </div>
+              <div class="conv-item">
+                <div class="conv-avatar" style="background: linear-gradient(135deg, #2dd4a0, #00d4ff);">MS</div>
+                <div class="conv-text">
+                  <div class="conv-name-row"><span class="conv-name">Michael Smith</span><span class="conv-time">5m</span></div>
+                  <div class="conv-msg">Do you have anything in the 28207...</div>
+                </div>
+                <div class="conv-status"></div>
+              </div>
+              <div class="conv-item">
+                <div class="conv-avatar" style="background: linear-gradient(135deg, #a78bfa, #f472b6);">SL</div>
+                <div class="conv-text">
+                  <div class="conv-name-row"><span class="conv-name">Samantha Lee</span><span class="conv-time">12m</span></div>
+                  <div class="conv-msg">I'd like to schedule a showing...</div>
+                </div>
+              </div>
+              <div class="conv-item">
+                <div class="conv-avatar" style="background: linear-gradient(135deg, #ffb547, #ff5e7a);">DB</div>
+                <div class="conv-text">
+                  <div class="conv-name-row"><span class="conv-name">David Brown</span><span class="conv-time">18m</span></div>
+                  <div class="conv-msg">What is the price on that listing?</div>
+                </div>
+              </div>
+            </div>
+            <button class="view-all-btn">View All Conversations</button>
+          </div>
+
+        </div>
+
+        <!-- ROW 2: Pipeline / Recent Deals / AI + Tasks -->
+        <div class="dash-row r2">
+
+          <!-- Pipeline Overview -->
+          <div class="card">
+            <div class="card-h">
+              <div class="card-title">Pipeline Overview</div>
+            </div>
+            <div class="pipeline-grid">
+              <div class="pipe-stage">
+                <div class="ps-name">New Leads</div>
+                <div class="ps-count">87 Leads</div>
+                <div class="ps-val">$2.1M</div>
+                <div class="pipe-bar"><div class="pipe-bar-fill" style="width: 100%"></div></div>
+              </div>
+              <div class="pipe-stage">
+                <div class="ps-name">Contacted</div>
+                <div class="ps-count">64 Leads</div>
+                <div class="ps-val">$1.6M</div>
+                <div class="pipe-bar"><div class="pipe-bar-fill" style="width: 73%"></div></div>
+              </div>
+              <div class="pipe-stage">
+                <div class="ps-name">Qualified</div>
+                <div class="ps-count">27 Leads</div>
+                <div class="ps-val">$2.3M</div>
+                <div class="pipe-bar"><div class="pipe-bar-fill" style="width: 51%"></div></div>
+              </div>
+              <div class="pipe-stage">
+                <div class="ps-name">Proposal</div>
+                <div class="ps-count">14 Leads</div>
+                <div class="ps-val">$1.2M</div>
+                <div class="pipe-bar"><div class="pipe-bar-fill" style="width: 32%"></div></div>
+              </div>
+              <div class="pipe-stage">
+                <div class="ps-name">Closed Won</div>
+                <div class="ps-count">12 Leads</div>
+                <div class="ps-val">$1.8M</div>
+                <div class="pipe-bar"><div class="pipe-bar-fill" style="width: 22%"></div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Deals -->
+          <div class="card">
+            <div class="card-h">
+              <div class="card-title">Recent Deals</div>
+            </div>
+            <div>
+              <div class="deal-row">
+                <div class="da">123 Main Street</div>
+                <div class="dp">$450,000</div>
+                <div class="ds under-contract">Under Contract</div>
+              </div>
+              <div class="deal-row">
+                <div class="da">456 Oak Avenue</div>
+                <div class="dp">$375,000</div>
+                <div class="ds proposal">Proposal Sent</div>
+              </div>
+              <div class="deal-row">
+                <div class="da">789 Pine Road</div>
+                <div class="dp">$620,000</div>
+                <div class="ds new">New Lead</div>
+              </div>
+              <div class="deal-row">
+                <div class="da">321 Elm Drive</div>
+                <div class="dp">$289,000</div>
+                <div class="ds showing">Showing Scheduled</div>
+              </div>
+            </div>
+            <button class="view-all-btn">View All Deals</button>
+          </div>
+
+          <!-- AI Assistant + Tasks -->
+          <div style="display: flex; flex-direction: column; gap: 1rem;">
+
+            <div class="ai-asst">
+              <div class="ai-h">
+                <div class="ai-icon">R</div>
+                <h3>AI Assistant</h3>
+              </div>
+              <div class="ai-sub">How can I help you today?</div>
+              <div class="ai-suggest">
+                <button class="ai-chip" onclick="goToTools('scoring')"><span class="ai-chip-icon">🎯</span> Score an incoming lead</button>
+                <button class="ai-chip" onclick="goToTools('valuation')"><span class="ai-chip-icon">🏠</span> Generate a home valuation</button>
+                <button class="ai-chip" onclick="goToTools('investor')"><span class="ai-chip-icon">📊</span> Screen an investor deal</button>
+              </div>
+              <div class="ai-input-wrap">
+                <input type="text" placeholder="Ask anything..." onkeydown="if(event.key==='Enter') goToTools('scoring')">
+                <button class="ai-send">→</button>
+              </div>
+            </div>
+
+            <div class="card" style="padding: 1rem 1.25rem;">
+              <div class="card-h" style="margin-bottom: 0.65rem;">
+                <div class="card-title">Tasks · Today</div>
+              </div>
+              <div class="task-list">
+                <div class="task-item">
+                  <div class="task-check" onclick="this.classList.toggle('done'); this.parentElement.querySelector('.task-text').classList.toggle('done')"></div>
+                  <div class="task-text">Follow up with John D.</div>
+                  <div class="task-time">9:00 AM</div>
+                </div>
+                <div class="task-item">
+                  <div class="task-check" onclick="this.classList.toggle('done'); this.parentElement.querySelector('.task-text').classList.toggle('done')"></div>
+                  <div class="task-text">Call new lead: Sarah M.</div>
+                  <div class="task-time">10:30 AM</div>
+                </div>
+                <div class="task-item">
+                  <div class="task-check" onclick="this.classList.toggle('done'); this.parentElement.querySelector('.task-text').classList.toggle('done')"></div>
+                  <div class="task-text">Listing appointment</div>
+                  <div class="task-time">12:00 PM</div>
+                </div>
+                <div class="task-item">
+                  <div class="task-check" onclick="this.classList.toggle('done'); this.parentElement.querySelector('.task-text').classList.toggle('done')"></div>
+                  <div class="task-text">Send market report</div>
+                  <div class="task-time">2:00 PM</div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ============ AI TOOLS VIEW ============ -->
+      <div class="view" id="view-ai-tools">
+
+        <div class="tool-tabs">
+          <button class="tool-tab active" data-tool="scoring"><span>🎯</span> Lead Scoring</button>
+          <button class="tool-tab" data-tool="valuation"><span>🏠</span> Home Valuation</button>
+          <button class="tool-tab" data-tool="investor"><span>📊</span> Investor Screener</button>
+        </div>
+
+        <!-- TOOL: LEAD SCORING -->
+        <div class="tool-panel active" id="tool-scoring">
+          <div class="tool-panel-header">
+            <h2>Lead Scoring · Score the lead, send the reply.</h2>
+            <p>Paste any incoming inquiry — text, email, web form, DM. Realtywize classifies it, recommends an action, and drafts a personalized reply your agent can send in one click.</p>
+          </div>
+          <div class="work-grid">
+
+            <div class="work-card">
+              <div class="card-label">Step 1 — Paste the Inquiry</div>
+              <div class="sample-buttons">
+                <button class="sample-btn" onclick="loadLeadSample('hot')">🔥 Hot Sample</button>
+                <button class="sample-btn" onclick="loadLeadSample('warm')">Warm Sample</button>
+                <button class="sample-btn" onclick="loadLeadSample('cold')">Cold Sample</button>
+              </div>
+              <label>Inquiry message</label>
+              <textarea id="lead-input" placeholder="Paste the buyer or seller's message here. Could be from a contact form, text, email, Instagram DM, anywhere..."></textarea>
+              <label>Source (optional)</label>
+              <input type="text" id="lead-source" placeholder="e.g. Contact form, Instagram DM, Zillow inquiry">
+              <button class="btn-analyze" onclick="analyzeLead()" id="lead-btn">Analyze Lead →</button>
+              <div id="lead-error"></div>
+            </div>
+
+            <div class="work-card">
+              <div class="card-label">Step 2 — AI Analysis</div>
+              <div id="lead-result">
+                <div class="result-placeholder">
+                  <div class="icon">🎯</div>
+                  <p>Your lead analysis will appear here<br>once you click Analyze.</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- TOOL: VALUATION -->
+        <div class="tool-panel" id="tool-valuation">
+          <div class="tool-panel-header">
+            <h2>Home Valuation · Instant estimates, warm leads.</h2>
+            <p>Get an AI-generated value estimate for any property. The same widget you embed on your site to capture seller leads with full context every single time.</p>
+          </div>
+          <div class="work-grid">
+
+            <div class="work-card">
+              <div class="card-label">Step 1 — Property Details</div>
+              <label>Property Address</label>
+              <input type="text" id="val-address" placeholder="e.g. 4271 Sharon Rd, Charlotte NC 28211">
+              <div class="input-row">
+                <div>
+                  <label>Bedrooms</label>
+                  <input type="number" id="val-beds" placeholder="3" min="1" max="20">
+                </div>
+                <div>
+                  <label>Bathrooms</label>
+                  <input type="number" id="val-baths" placeholder="2.5" step="0.5" min="1">
+                </div>
+              </div>
+              <div class="input-row">
+                <div>
+                  <label>Square Feet</label>
+                  <input type="number" id="val-sqft" placeholder="2140">
+                </div>
+                <div>
+                  <label>Year Built</label>
+                  <input type="number" id="val-year" placeholder="1998">
+                </div>
+              </div>
+              <label>Notable Features (optional)</label>
+              <textarea id="val-notes" placeholder="Updated kitchen, finished basement, pool, recent roof, etc." style="min-height: 80px;"></textarea>
+              <button class="btn-analyze" onclick="analyzeValuation()" id="val-btn">Get Valuation →</button>
+              <div id="val-error"></div>
+            </div>
+
+            <div class="work-card">
+              <div class="card-label">Step 2 — Value Estimate</div>
+              <div id="val-result">
+                <div class="result-placeholder">
+                  <div class="icon">🏠</div>
+                  <p>Property value estimate will appear here<br>once details are submitted.</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- TOOL: INVESTOR -->
+        <div class="tool-panel" id="tool-investor">
+          <div class="tool-panel-header">
+            <h2>Investor Screener · Grade the deal, skip the bad ones.</h2>
+            <p>Drop in the numbers on any property. Realtywize grades it A through F across flip, BRRRR, and buy-and-hold strategies — with reasoning your team can actually act on.</p>
+          </div>
+          <div class="work-grid">
+
+            <div class="work-card">
+              <div class="card-label">Step 1 — Deal Numbers</div>
+              <label>Property Address</label>
+              <input type="text" id="inv-address" placeholder="e.g. 812 N Brevard St, Charlotte NC 28206">
+              <div class="input-row">
+                <div>
+                  <label>Purchase Price</label>
+                  <input type="number" id="inv-price" placeholder="245000">
+                </div>
+                <div>
+                  <label>Est. Rehab Cost</label>
+                  <input type="number" id="inv-rehab" placeholder="55000">
+                </div>
+              </div>
+              <div class="input-row">
+                <div>
+                  <label>ARV (After Repair Value)</label>
+                  <input type="number" id="inv-arv" placeholder="385000">
+                </div>
+                <div>
+                  <label>Est. Monthly Rent</label>
+                  <input type="number" id="inv-rent" placeholder="2200">
+                </div>
+              </div>
+              <label>Strategy Focus</label>
+              <select id="inv-strategy">
+                <option value="all">All Strategies (compare)</option>
+                <option value="flip">Flip</option>
+                <option value="brrrr">BRRRR</option>
+                <option value="hold">Buy & Hold</option>
+              </select>
+              <label>Property Notes (optional)</label>
+              <textarea id="inv-notes" placeholder="Neighborhood condition, comps, structural concerns, etc." style="min-height: 80px;"></textarea>
+              <button class="btn-analyze" onclick="analyzeDeal()" id="inv-btn">Grade the Deal →</button>
+              <div id="inv-error"></div>
+            </div>
+
+            <div class="work-card">
+              <div class="card-label">Step 2 — Deal Analysis</div>
+              <div id="inv-result">
+                <div class="result-placeholder">
+                  <div class="icon">📊</div>
+                  <p>Deal grade and analysis will appear here<br>once numbers are submitted.</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ============ DEAL FINDER VIEW ============ -->
+      <div class="view" id="view-deal-finder">
+
+        <div class="df-header">
+          <div>
+            <h2 class="df-title">Deal Finder · Hunt off-market opportunities.</h2>
+            <p class="df-sub">Plugged into your BatchData feed. Search in plain English, get AI-ranked distressed properties with drafted outreach in seconds.</p>
+          </div>
+          <div class="df-badge">DEMO DATA</div>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="df-search-card">
+          <div class="df-search-row">
+            <input type="text" id="df-search-input" class="df-search-input"
+              placeholder='Search in plain English — e.g. "absentee landlords in 28206 with 30%+ equity"'>
+            <button class="btn-analyze df-search-btn" onclick="runDealSearch()" id="df-search-btn">Search Deals →</button>
+          </div>
+
+          <div class="df-filters">
+            <div class="df-filter-label">Quick filters:</div>
+            <button class="df-chip" data-filter="pre-foreclosure">🔴 Pre-foreclosure</button>
+            <button class="df-chip" data-filter="absentee">🟡 Absentee Owners</button>
+            <button class="df-chip" data-filter="tax-delinquent">🟠 Tax Delinquent</button>
+            <button class="df-chip" data-filter="high-equity">🟢 High Equity</button>
+            <button class="df-chip" data-filter="probate">🟣 Probate</button>
+            <button class="df-chip" data-filter="expired">⚪ Expired Listings</button>
+          </div>
+
+          <div id="df-search-status" class="df-status"></div>
+        </div>
+
+        <!-- Results Table -->
+        <div class="df-results-card">
+          <div class="df-results-header">
+            <div>
+              <h3 class="df-results-title">Results</h3>
+              <span class="df-results-count" id="df-results-count">25 properties</span>
+            </div>
+            <div class="df-results-sort">
+              <label>Sort:</label>
+              <select id="df-sort" onchange="renderResults()">
+                <option value="score">AI Opportunity Score</option>
+                <option value="equity">Highest Equity</option>
+                <option value="years">Years Owned (desc)</option>
+                <option value="value">Estimated Value</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="df-table-wrap">
+            <table class="df-table">
+              <thead>
+                <tr>
+                  <th>Address</th>
+                  <th>Signals</th>
+                  <th>Est. Value</th>
+                  <th>Equity</th>
+                  <th>Owner</th>
+                  <th>Score</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="df-table-body">
+                <!-- populated by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ============ DEAL FINDER DETAIL DRAWER ============ -->
+      <div class="df-drawer-backdrop" id="df-drawer-backdrop" onclick="closeDrawer()"></div>
+      <aside class="df-drawer" id="df-drawer">
+        <button class="df-drawer-close" onclick="closeDrawer()">✕</button>
+        <div id="df-drawer-content">
+          <!-- populated by JS -->
+        </div>
+      </aside>
+
+      <!-- ============ PLACEHOLDER VIEWS (Empty States) ============ -->
+      <div class="view" id="view-leads">
+        <div class="empty-view">
+          <div class="ev-icon">👥</div>
+          <h2>Leads</h2>
+          <p>Your full lead database with filtering, scoring, and bulk actions will live here. In the live version, this connects to your CRM and surfaces every inbound lead in real time.</p>
+          <div class="pill">On the Roadmap · 2026</div>
+        </div>
+      </div>
+      <div class="view" id="view-conversations">
+        <div class="empty-view">
+          <div class="ev-icon">💬</div>
+          <h2>Conversations</h2>
+          <p>Unified inbox across SMS, email, web chat, and DMs. Every conversation in one place with AI-suggested replies ready to send.</p>
+          <div class="pill">On the Roadmap · 2026</div>
+        </div>
+      </div>
+      <div class="view" id="view-calendars">
+        <div class="empty-view">
+          <div class="ev-icon">📅</div>
+          <h2>Calendars</h2>
+          <p>Multi-agent calendar with automated showing scheduling, smart conflict resolution, and round-robin lead distribution.</p>
+          <div class="pill">On the Roadmap · 2026</div>
+        </div>
+      </div>
+      <div class="view" id="view-properties">
+        <div class="empty-view">
+          <div class="ev-icon">🏘️</div>
+          <h2>Properties</h2>
+          <p>Your active and pending listings — synced with MLS, enriched with AI-generated descriptions and showing analytics.</p>
+          <div class="pill">On the Roadmap · 2026</div>
+        </div>
+      </div>
+      <div class="view" id="view-deals">
+        <div class="empty-view">
+          <div class="ev-icon">💼</div>
+          <h2>Deals</h2>
+          <p>Full deal pipeline with stage progression, commission tracking, and document management for every active transaction.</p>
+          <div class="pill">On the Roadmap · 2026</div>
+        </div>
+      </div>
+      <div class="view" id="view-tasks">
+        <div class="empty-view">
+          <div class="ev-icon">✓</div>
+          <h2>Tasks</h2>
+          <p>Smart task lists auto-generated from lead actions, deal stages, and AI follow-up recommendations.</p>
+          <div class="pill">On the Roadmap · 2026</div>
+        </div>
+      </div>
+      <div class="view" id="view-marketing">
+        <div class="empty-view">
+          <div class="ev-icon">📣</div>
+          <h2>Marketing</h2>
+          <p>AI-generated listing copy, social posts, email campaigns, and ad creative — tailored to each property and audience.</p>
+          <div class="pill">On the Roadmap · 2026</div>
+        </div>
+      </div>
+      <div class="view" id="view-analytics">
+        <div class="empty-view">
+          <div class="ev-icon">📊</div>
+          <h2>Analytics</h2>
+          <p>Deep performance analytics: lead source ROI, conversion funnel, agent productivity, and market trend insights.</p>
+          <div class="pill">On the Roadmap · 2026</div>
+        </div>
+      </div>
+      <div class="view" id="view-settings">
+        <div class="empty-view">
+          <div class="ev-icon">⚙️</div>
+          <h2>Settings</h2>
+          <p>Configure team members, integrations, brand colors, API keys, notification preferences, and billing.</p>
+          <div class="pill">On the Roadmap · 2026</div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+</div>
+
+<script>
+  // ============ SIDEBAR NAVIGATION ============
+  const viewTitles = {
+    'dashboard': 'Dashboard',
+    'leads': 'Leads',
+    'conversations': 'Conversations',
+    'calendars': 'Calendars',
+    'properties': 'Properties',
+    'deals': 'Deals',
+    'tasks': 'Tasks',
+    'marketing': 'Marketing',
+    'analytics': 'Analytics',
+    'ai-tools': 'AI Assistant',
+    'settings': 'Settings'
+  };
+
+  document.querySelectorAll('.sb-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const view = item.dataset.view;
+      switchView(view);
+      // close sidebar on mobile
+      document.getElementById('sidebar').classList.remove('open');
+    });
+  });
+
+  function switchView(view) {
+    document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
+    document.querySelector(`.sb-item[data-view="${view}"]`).classList.add('active');
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById('view-' + view).classList.add('active');
+    document.getElementById('page-title').textContent = viewTitles[view] || view;
+  }
+
+  // Mobile menu
+  document.getElementById('menuBtn').addEventListener('click', () => {
+    document.getElementById('sidebar').classList.toggle('open');
+  });
+
+  // ============ TOOL TAB SWITCHING ============
+  document.querySelectorAll('.tool-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const tool = tab.dataset.tool;
+      switchTool(tool);
+    });
+  });
+
+  function switchTool(tool) {
+    document.querySelectorAll('.tool-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector(`.tool-tab[data-tool="${tool}"]`).classList.add('active');
+    document.querySelectorAll('.tool-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('tool-' + tool).classList.add('active');
+  }
+
+  // Direct nav from AI Assistant card on dashboard
+  function goToTools(tool) {
+    switchView('ai-tools');
+    switchTool(tool);
+  }
+
+  // ============ SAMPLE LEADS ============
+  const leadSamples = {
+    hot: "Hi! Saw your listing on Providence Rd. We're relocating from Chicago in July and need to be settled before school starts. Pre-approved cash buyers up to $850K. Would love to walk it this Saturday or Sunday — text me at 312-555-0142.",
+    warm: "Hey, found you on Instagram. We're thinking about buying our first home sometime in the next 6-12 months. Currently renting in NoDa. Just want to start getting educated on the process. What's your typical first step?",
+    cold: "Hi just curious what the market is doing in Ballantyne. Not really looking right now, my lease isn't up for another year and a half. But want to start watching prices."
+  };
+  function loadLeadSample(type) {
+    document.getElementById('lead-input').value = leadSamples[type];
+    document.getElementById('lead-source').value = type === 'hot' ? 'Website contact form' : type === 'warm' ? 'Instagram DM' : 'Website inquiry';
+  }
+
+  // ============ CLAUDE API HELPER ============
+  async function callClaude(prompt, maxTokens = 1000) {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: maxTokens,
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error("API Error: " + errText);
+    }
+    const data = await response.json();
+    return data.content
+      .filter(block => block.type === "text")
+      .map(block => block.text)
+      .join("\n");
+  }
+
+  function parseJSON(text) {
+    const cleaned = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+    const start = cleaned.indexOf('{');
+    const end = cleaned.lastIndexOf('}');
+    if (start === -1 || end === -1) throw new Error("No JSON object found");
+    return JSON.parse(cleaned.substring(start, end + 1));
+  }
+
+  // ============ LEAD SCORING ============
+  async function analyzeLead() {
+    const message = document.getElementById('lead-input').value.trim();
+    const source = document.getElementById('lead-source').value.trim();
+    const btn = document.getElementById('lead-btn');
+    const result = document.getElementById('lead-result');
+    const errBox = document.getElementById('lead-error');
+
+    errBox.innerHTML = '';
+    if (!message) {
+      errBox.innerHTML = '<div class="error">Please paste a lead message to analyze.</div>';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = 'Analyzing...';
+    result.innerHTML = '<div class="loading"><div class="spinner"></div><p>Realtywize is reading the lead...</p></div>';
+
+    const prompt = `You are Realtywize, an AI lead scoring assistant for a real estate brokerage. Analyze this incoming inquiry and respond with ONLY a JSON object (no other text, no markdown fences).
+
+INQUIRY: """${message}"""
+SOURCE: ${source || 'Unknown'}
+
+Respond with this exact JSON structure:
+{
+  "score": "HOT" | "WARM" | "COLD",
+  "confidence": <number 1-100>,
+  "type": "Buyer" | "Seller" | "Investor" | "Renter" | "Browser",
+  "urgency": "<short urgency description, e.g. 'This weekend', '6-12 months', 'No timeline'>",
+  "summary": "<one-sentence summary of who this is and what they want>",
+  "key_signals": "<2-3 key signals that informed the score>",
+  "recommended_action": "<specific action the agent should take next>",
+  "drafted_reply": "<a warm, personalized reply the agent could send, 3-5 sentences, conversational but professional, no fake details or made-up numbers, sign off with [Agent Name]>"
+}
+
+Scoring guide:
+- HOT (80-100 confidence): pre-approved, cash buyer, urgent timeline (under 90 days), specific property, motivated seller language
+- WARM (50-79): genuine interest but longer timeline (3-12 months), needs education, not yet pre-approved
+- COLD (under 50): browsing only, no timeline, info gathering only, no actionable intent
+
+Return ONLY the JSON object.`;
+
+    try {
+      const responseText = await callClaude(prompt, 1200);
+      const data = parseJSON(responseText);
+      const scoreClass = data.score.toLowerCase();
+      const scoreEmoji = data.score === 'HOT' ? '🔥' : data.score === 'WARM' ? '☀️' : '❄️';
+      result.innerHTML = `
+        <div class="score-display">
+          <div class="score-badge ${scoreClass}">${scoreEmoji} ${data.score}</div>
+          <div class="score-confidence"><strong>${data.confidence}%</strong> confidence · ${data.type} · ${data.urgency}</div>
+        </div>
+        <div class="result-section">
+          <h4>Summary</h4>
+          <p>${data.summary}</p>
+        </div>
+        <div class="result-section">
+          <h4>Key Signals</h4>
+          <p>${data.key_signals}</p>
+        </div>
+        <div class="result-section">
+          <h4>Recommended Action</h4>
+          <p>${data.recommended_action}</p>
+        </div>
+        <div class="result-section">
+          <h4>Drafted Reply</h4>
+          <div class="reply-box">${data.drafted_reply.replace(/\n/g, '<br>')}</div>
+          <button class="copy-btn" onclick="copyReply(this)">Copy Reply</button>
+        </div>
+      `;
+      window._draftedReply = data.drafted_reply;
+    } catch (err) {
+      result.innerHTML = `<div class="result-placeholder"><div class="icon">⚠️</div><p>Couldn't analyze lead.<br>${err.message}</p></div>`;
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = 'Analyze Lead →';
+    }
+  }
+
+  function copyReply(btn) {
+    if (window._draftedReply) {
+      navigator.clipboard.writeText(window._draftedReply);
+      btn.innerHTML = 'Copied ✓';
+      setTimeout(() => btn.innerHTML = 'Copy Reply', 2000);
+    }
+  }
+
+  // ============ HOME VALUATION ============
+  async function analyzeValuation() {
+    const address = document.getElementById('val-address').value.trim();
+    const beds = document.getElementById('val-beds').value;
+    const baths = document.getElementById('val-baths').value;
+    const sqft = document.getElementById('val-sqft').value;
+    const year = document.getElementById('val-year').value;
+    const notes = document.getElementById('val-notes').value.trim();
+    const btn = document.getElementById('val-btn');
+    const result = document.getElementById('val-result');
+    const errBox = document.getElementById('val-error');
+
+    errBox.innerHTML = '';
+    if (!address || !beds || !baths || !sqft) {
+      errBox.innerHTML = '<div class="error">Please fill in address, beds, baths, and square feet.</div>';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = 'Estimating...';
+    result.innerHTML = '<div class="loading"><div class="spinner"></div><p>Realtywize is analyzing the property...</p></div>';
+
+    const prompt = `You are Realtywize, an AI home valuation assistant for a real estate brokerage. Provide a reasonable AI-estimated value range for this property. This is a marketing/lead-gen estimate, not a formal appraisal — use general market reasoning based on the location, size, age, and features.
+
+PROPERTY:
+- Address: ${address}
+- Bedrooms: ${beds}
+- Bathrooms: ${baths}
+- Square Feet: ${sqft}
+- Year Built: ${year || 'Unknown'}
+- Notable Features: ${notes || 'None specified'}
+
+Respond with ONLY a JSON object (no markdown, no extra text):
+{
+  "estimated_value": <number, the midpoint estimate>,
+  "low_range": <number>,
+  "high_range": <number>,
+  "price_per_sqft": <number>,
+  "market_position": "<short phrase like 'Above market avg' or 'Solid mid-range'>",
+  "key_factors": "<2-3 sentences on what's driving this estimate — location, size, age, features>",
+  "selling_advice": "<2-3 sentences of practical advice for a seller in this market, no specific dollar promises>",
+  "next_step": "<a soft CTA encouraging the seller to schedule a personalized consultation with an agent>"
+}
+
+Provide a reasonable estimate based on general knowledge of the area and property characteristics. Return ONLY the JSON object.`;
+
+    try {
+      const responseText = await callClaude(prompt, 1000);
+      const data = parseJSON(responseText);
+      const fmt = (n) => '$' + Math.round(n).toLocaleString();
+      const fmtK = (n) => '$' + (n >= 1000000 ? (n/1000000).toFixed(2) + 'M' : Math.round(n/1000) + 'K');
+      result.innerHTML = `
+        <div class="val-display">
+          <div class="val-label">AI Estimated Value</div>
+          <div class="val-price">${fmtK(data.estimated_value)}</div>
+          <div class="val-range">Range: ${fmt(data.low_range)} — ${fmt(data.high_range)}</div>
+        </div>
+        <div class="metric-grid">
+          <div class="metric-tile">
+            <div class="m-label">Price / Sqft</div>
+            <div class="m-value">$${data.price_per_sqft}</div>
+          </div>
+          <div class="metric-tile">
+            <div class="m-label">Market Position</div>
+            <div class="m-value" style="font-size: 0.92rem; font-weight: 500;">${data.market_position}</div>
+          </div>
+        </div>
+        <div class="result-section">
+          <h4>What's Driving This Estimate</h4>
+          <p>${data.key_factors}</p>
+        </div>
+        <div class="result-section">
+          <h4>Selling Advice</h4>
+          <p>${data.selling_advice}</p>
+        </div>
+        <div class="result-section">
+          <h4>Next Step</h4>
+          <p>${data.next_step}</p>
+        </div>
+      `;
+    } catch (err) {
+      result.innerHTML = `<div class="result-placeholder"><div class="icon">⚠️</div><p>Couldn't generate valuation.<br>${err.message}</p></div>`;
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = 'Get Valuation →';
+    }
+  }
+
+  // ============ INVESTOR DEAL SCREENER ============
+  async function analyzeDeal() {
+    const address = document.getElementById('inv-address').value.trim();
+    const price = parseFloat(document.getElementById('inv-price').value);
+    const rehab = parseFloat(document.getElementById('inv-rehab').value) || 0;
+    const arv = parseFloat(document.getElementById('inv-arv').value);
+    const rent = parseFloat(document.getElementById('inv-rent').value) || 0;
+    const strategy = document.getElementById('inv-strategy').value;
+    const notes = document.getElementById('inv-notes').value.trim();
+    const btn = document.getElementById('inv-btn');
+    const result = document.getElementById('inv-result');
+    const errBox = document.getElementById('inv-error');
+
+    errBox.innerHTML = '';
+    if (!address || !price || !arv) {
+      errBox.innerHTML = '<div class="error">Please fill in address, purchase price, and ARV.</div>';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = 'Grading...';
+    result.innerHTML = '<div class="loading"><div class="spinner"></div><p>Realtywize is running the numbers...</p></div>';
+
+    const totalInvested = price + rehab;
+    const grossProfit = arv - totalInvested;
+    const grossMargin = (grossProfit / arv) * 100;
+    const annualRent = rent * 12;
+    const grossYield = (annualRent / totalInvested) * 100;
+    const sevenPercentRule = arv * 0.7 - rehab;
+    const meets70Rule = price <= sevenPercentRule;
+
+    const prompt = `You are Realtywize, an AI deal screener for real estate investors. Analyze this deal and grade it.
+
+DEAL:
+- Address: ${address}
+- Purchase Price: $${price.toLocaleString()}
+- Rehab Cost: $${rehab.toLocaleString()}
+- ARV (After Repair Value): $${arv.toLocaleString()}
+- Monthly Rent (if held): $${rent.toLocaleString()}
+- Strategy Focus: ${strategy}
+- Notes: ${notes || 'None'}
+
+CALCULATED METRICS:
+- Total Invested: $${totalInvested.toLocaleString()}
+- Gross Profit (ARV - Total): $${grossProfit.toLocaleString()}
+- Gross Margin: ${grossMargin.toFixed(1)}%
+- Annual Rent: $${annualRent.toLocaleString()}
+- Gross Yield: ${grossYield.toFixed(2)}%
+- 70% Rule Max Offer: $${sevenPercentRule.toLocaleString()}
+- Meets 70% Rule: ${meets70Rule ? 'Yes' : 'No'}
+
+Respond with ONLY a JSON object (no markdown, no extra text):
+{
+  "grade": "A" | "B" | "C" | "D" | "F",
+  "grade_summary": "<one-sentence description of the grade — what makes it this grade>",
+  "flip_score": "<grade A-F>",
+  "brrrr_score": "<grade A-F, or 'N/A' if no rent provided>",
+  "hold_score": "<grade A-F, or 'N/A' if no rent provided>",
+  "best_strategy": "<which strategy fits this deal best and why, 2 sentences>",
+  "risks": "<2-3 sentences on the key risks of this deal>",
+  "recommendation": "<clear recommendation — pursue, negotiate, or pass, with reasoning>"
+}
+
+Grading rubric:
+- A: Strong margins (>25% flip / >10% cash-on-cash), meets 70% rule, low risk
+- B: Solid deal, meets most metrics, manageable risk
+- C: Marginal — would need negotiation or specific conditions
+- D: Poor numbers, high risk
+- F: Avoid
+
+Return ONLY the JSON object.`;
+
+    try {
+      const responseText = await callClaude(prompt, 1200);
+      const data = parseJSON(responseText);
+      const gradeClass = data.grade.toLowerCase();
+      const fmt = (n) => '$' + Math.round(n).toLocaleString();
+      result.innerHTML = `
+        <div class="deal-display">
+          <div class="grade-circle ${gradeClass}">${data.grade}</div>
+          <div class="grade-text">
+            <h3>Deal Grade: ${data.grade}</h3>
+            <p>${data.grade_summary}</p>
+          </div>
+        </div>
+        <div class="metric-grid">
+          <div class="metric-tile">
+            <div class="m-label">Gross Profit</div>
+            <div class="m-value ${grossProfit < 0 ? 'neg' : ''}">${fmt(grossProfit)}</div>
+          </div>
+          <div class="metric-tile">
+            <div class="m-label">Margin</div>
+            <div class="m-value ${grossMargin < 0 ? 'neg' : ''}">${grossMargin.toFixed(1)}%</div>
+          </div>
+          <div class="metric-tile">
+            <div class="m-label">70% Rule Max</div>
+            <div class="m-value">${fmt(sevenPercentRule)}</div>
+          </div>
+          <div class="metric-tile">
+            <div class="m-label">Gross Yield</div>
+            <div class="m-value">${grossYield.toFixed(2)}%</div>
+          </div>
+        </div>
+        <div class="result-section">
+          <h4>Strategy Fit</h4>
+          <p><strong style="color:var(--white)">Flip:</strong> ${data.flip_score} &nbsp;·&nbsp; <strong style="color:var(--white)">BRRRR:</strong> ${data.brrrr_score} &nbsp;·&nbsp; <strong style="color:var(--white)">Hold:</strong> ${data.hold_score}</p>
+        </div>
+        <div class="result-section">
+          <h4>Best Strategy</h4>
+          <p>${data.best_strategy}</p>
+        </div>
+        <div class="result-section">
+          <h4>Key Risks</h4>
+          <p>${data.risks}</p>
+        </div>
+        <div class="result-section">
+          <h4>Recommendation</h4>
+          <p>${data.recommendation}</p>
+        </div>
+      `;
+    } catch (err) {
+      result.innerHTML = `<div class="result-placeholder"><div class="icon">⚠️</div><p>Couldn't grade deal.<br>${err.message}</p></div>`;
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = 'Grade the Deal →';
+    }
+  }
+
+  // ============================================================
+  // ============ DEAL FINDER ===================================
+  // ============================================================
+
+  const MOCK_PROPERTIES = [
+    { id:1, addr:"1842 Edgewater Dr", city:"Orlando", state:"FL", zip:"32804", value:385000, equityPct:62, yearsOwned:18, beds:3, baths:2, sqft:1640, owner:"Patricia M. Holcomb", ownerCity:"Atlanta", ownerState:"GA", absentee:true, signals:["absentee","equity","code"], detail:{ taxOwed:0, codeViolations:2, vacancyDays:null, lastSale:"2007", listingHistory:"never listed" }},
+    { id:2, addr:"724 Magnolia St", city:"Tampa", state:"FL", zip:"33602", value:298000, equityPct:88, yearsOwned:31, beds:2, baths:1, sqft:1180, owner:"Estate of Walter J. Reeves", ownerCity:"Tampa", ownerState:"FL", absentee:false, signals:["probate","equity"], detail:{ taxOwed:0, codeViolations:0, vacancyDays:120, lastSale:"1994", listingHistory:"never listed", probateFiled:"2025-09-14" }},
+    { id:3, addr:"3155 SW 18th Ave", city:"Miami", state:"FL", zip:"33145", value:612000, equityPct:34, yearsOwned:9, beds:3, baths:2, sqft:1820, owner:"Marcus & Elaine Torres", ownerCity:"Miami", ownerState:"FL", absentee:false, signals:["foreclosure"], detail:{ taxOwed:0, codeViolations:0, vacancyDays:null, lastSale:"2016", listingHistory:"never listed", nodFiled:"2026-02-10", monthsBehind:5 }},
+    { id:4, addr:"918 Lakewood Ter", city:"Jacksonville", state:"FL", zip:"32207", value:225000, equityPct:71, yearsOwned:22, beds:3, baths:1, sqft:1380, owner:"Ronald Pickett Jr.", ownerCity:"Brunswick", ownerState:"GA", absentee:true, signals:["absentee","tax","equity"], detail:{ taxOwed:4280, codeViolations:0, vacancyDays:null, lastSale:"2003", listingHistory:"never listed", taxDelinquentSince:"2023" }},
+    { id:5, addr:"5601 N Habana Ave", city:"Tampa", state:"FL", zip:"33614", value:340000, equityPct:55, yearsOwned:14, beds:4, baths:2, sqft:1990, owner:"Sergei Volkov", ownerCity:"Brooklyn", ownerState:"NY", absentee:true, signals:["absentee","equity","vacant"], detail:{ taxOwed:0, codeViolations:0, vacancyDays:210, lastSale:"2011", listingHistory:"never listed" }},
+    { id:6, addr:"2210 Park Ave SE", city:"St. Petersburg", state:"FL", zip:"33712", value:425000, equityPct:48, yearsOwned:11, beds:3, baths:2, sqft:1720, owner:"Diane K. Whitford", ownerCity:"St. Petersburg", ownerState:"FL", absentee:false, signals:["expired"], detail:{ taxOwed:0, codeViolations:0, vacancyDays:null, lastSale:"2014", listingHistory:"expired 2025-11 ($479,900, 142 DOM)" }},
+    { id:7, addr:"6789 Mariposa Pl", city:"Orlando", state:"FL", zip:"32811", value:265000, equityPct:91, yearsOwned:28, beds:3, baths:2, sqft:1450, owner:"Estate of Janet R. Kingsley", ownerCity:"Orlando", ownerState:"FL", absentee:false, signals:["probate","equity","vacant"], detail:{ taxOwed:0, codeViolations:1, vacancyDays:95, lastSale:"1997", listingHistory:"never listed", probateFiled:"2025-12-02" }},
+    { id:8, addr:"1455 Cordova Rd", city:"Fort Lauderdale", state:"FL", zip:"33316", value:780000, equityPct:42, yearsOwned:13, beds:4, baths:3, sqft:2340, owner:"Henrik Larsson", ownerCity:"Houston", ownerState:"TX", absentee:true, signals:["absentee","equity"], detail:{ taxOwed:0, codeViolations:0, vacancyDays:null, lastSale:"2012", listingHistory:"never listed" }},
+    { id:9, addr:"308 W 27th St", city:"Jacksonville", state:"FL", zip:"32206", value:148000, equityPct:100, yearsOwned:35, beds:2, baths:1, sqft:980, owner:"Dolores McKinney", ownerCity:"Jacksonville", ownerState:"FL", absentee:false, signals:["tax","equity","code"], detail:{ taxOwed:6840, codeViolations:3, vacancyDays:null, lastSale:"1990", listingHistory:"never listed", taxDelinquentSince:"2022" }},
+    { id:10, addr:"4422 Tropicana Way", city:"Tampa", state:"FL", zip:"33611", value:455000, equityPct:38, yearsOwned:8, beds:3, baths:2, sqft:1870, owner:"Anthony & Lisa Borelli", ownerCity:"Tampa", ownerState:"FL", absentee:false, signals:["foreclosure","equity"], detail:{ taxOwed:0, codeViolations:0, vacancyDays:null, lastSale:"2017", listingHistory:"never listed", nodFiled:"2026-01-22", monthsBehind:4 }},
+    { id:11, addr:"117 SE 12th St", city:"Gainesville", state:"FL", zip:"32601", value:198000, equityPct:78, yearsOwned:24, beds:3, baths:2, sqft:1310, owner:"Walter G. Pemberton", ownerCity:"Chicago", ownerState:"IL", absentee:true, signals:["absentee","equity","tax"], detail:{ taxOwed:3210, codeViolations:0, vacancyDays:null, lastSale:"2001", listingHistory:"never listed", taxDelinquentSince:"2024" }},
+    { id:12, addr:"2901 NW 19th St", city:"Miami", state:"FL", zip:"33125", value:485000, equityPct:67, yearsOwned:19, beds:3, baths:2, sqft:1560, owner:"Carlos & Ana Ferreira", ownerCity:"Miami", ownerState:"FL", absentee:false, signals:["equity","code"], detail:{ taxOwed:0, codeViolations:2, vacancyDays:null, lastSale:"2006", listingHistory:"never listed" }},
+    { id:13, addr:"545 Beach Park Blvd", city:"Tampa", state:"FL", zip:"33606", value:920000, equityPct:29, yearsOwned:7, beds:4, baths:3, sqft:2680, owner:"Thomas Yamamoto", ownerCity:"San Diego", ownerState:"CA", absentee:true, signals:["absentee","expired"], detail:{ taxOwed:0, codeViolations:0, vacancyDays:null, lastSale:"2018", listingHistory:"expired 2025-09 ($999,000, 187 DOM)" }},
+    { id:14, addr:"8810 NW 33rd Ct", city:"Sunrise", state:"FL", zip:"33351", value:362000, equityPct:55, yearsOwned:15, beds:3, baths:2, sqft:1620, owner:"Estate of Mildred Ostrowski", ownerCity:"Sunrise", ownerState:"FL", absentee:false, signals:["probate","equity"], detail:{ taxOwed:0, codeViolations:0, vacancyDays:60, lastSale:"2010", listingHistory:"never listed", probateFiled:"2026-01-08" }},
+    { id:15, addr:"1206 Aviary Ln", city:"Orlando", state:"FL", zip:"32825", value:312000, equityPct:44, yearsOwned:10, beds:3, baths:2, sqft:1480, owner:"Vincent Ozimkowski", ownerCity:"Newark", ownerState:"NJ", absentee:true, signals:["absentee","equity"], detail:{ taxOwed:0, codeViolations:0, vacancyDays:null, lastSale:"2015", listingHistory:"never listed" }},
+    { id:16, addr:"3737 Holiday Hill Dr", city:"Jacksonville", state:"FL", zip:"32216", value:255000, equityPct:83, yearsOwned:26, beds:4, baths:2, sqft:1820, owner:"Frank & Beatrice Tully", ownerCity:"Jacksonville", ownerState:"FL", absentee:false, signals:["equity","tax"], detail:{ taxOwed:2180, codeViolations:0, vacancyDays:null, lastSale:"1999", listingHistory:"never listed", taxDelinquentSince:"2025" }},
+    { id:17, addr:"4715 Coquina Key", city:"St. Petersburg", state:"FL", zip:"33705", value:528000, equityPct:36, yearsOwned:6, beds:3, baths:2, sqft:1740, owner:"Brendan & Sarah O'Neill", ownerCity:"St. Petersburg", ownerState:"FL", absentee:false, signals:["foreclosure"], detail:{ taxOwed:0, codeViolations:0, vacancyDays:null, lastSale:"2019", listingHistory:"never listed", nodFiled:"2026-03-04", monthsBehind:3 }},
+    { id:18, addr:"622 Citrus Grove Rd", city:"Lakeland", state:"FL", zip:"33805", value:172000, equityPct:95, yearsOwned:32, beds:3, baths:1, sqft:1220, owner:"Ruth A. Caldwell", ownerCity:"Lakeland", ownerState:"FL", absentee:false, signals:["equity","code","vacant"], detail:{ taxOwed:0, codeViolations:4, vacancyDays:145, lastSale:"1993", listingHistory:"never listed" }},
+    { id:19, addr:"9908 Fountainview Blvd", city:"Plantation", state:"FL", zip:"33324", value:445000, equityPct:51, yearsOwned:12, beds:4, baths:2, sqft:2010, owner:"Devon & Karen Mthembu", ownerCity:"Atlanta", ownerState:"GA", absentee:true, signals:["absentee","equity","expired"], detail:{ taxOwed:0, codeViolations:0, vacancyDays:null, lastSale:"2013", listingHistory:"expired 2025-10 ($489,900, 156 DOM)" }},
+    { id:20, addr:"1101 NE 50th St", city:"Oakland Park", state:"FL", zip:"33334", value:385000, equityPct:60, yearsOwned:17, beds:3, baths:2, sqft:1490, owner:"Estate of Norman Reichert", ownerCity:"Oakland Park", ownerState:"FL", absentee:false, signals:["probate","equity"], detail:{ taxOwed:0, codeViolations:1, vacancyDays:75, lastSale:"2008", listingHistory:"never listed", probateFiled:"2025-11-19" }},
+    { id:21, addr:"234 Pine Forest Dr", city:"Tallahassee", state:"FL", zip:"32301", value:215000, equityPct:74, yearsOwned:21, beds:3, baths:2, sqft:1390, owner:"Marcus Greenfield", ownerCity:"Boston", ownerState:"MA", absentee:true, signals:["absentee","equity","tax"], detail:{ taxOwed:1840, codeViolations:0, vacancyDays:null, lastSale:"2004", listingHistory:"never listed", taxDelinquentSince:"2025" }},
+    { id:22, addr:"7720 Sandhill Crane Pl", city:"Naples", state:"FL", zip:"34119", value:685000, equityPct:46, yearsOwned:9, beds:4, baths:3, sqft:2450, owner:"Stephen J. Mehlhorn", ownerCity:"Cincinnati", ownerState:"OH", absentee:true, signals:["absentee","equity"], detail:{ taxOwed:0, codeViolations:0, vacancyDays:null, lastSale:"2016", listingHistory:"never listed" }},
+    { id:23, addr:"3401 Hibiscus St", city:"West Palm Beach", state:"FL", zip:"33405", value:512000, equityPct:32, yearsOwned:7, beds:3, baths:2, sqft:1620, owner:"Jorge & Carmen Rivera", ownerCity:"West Palm Beach", ownerState:"FL", absentee:false, signals:["foreclosure","code"], detail:{ taxOwed:0, codeViolations:1, vacancyDays:null, lastSale:"2018", listingHistory:"never listed", nodFiled:"2026-02-28", monthsBehind:6 }},
+    { id:24, addr:"1018 Riverside Pl", city:"Daytona Beach", state:"FL", zip:"32118", value:248000, equityPct:86, yearsOwned:29, beds:2, baths:1, sqft:1080, owner:"Estate of Harold Petrowski", ownerCity:"Daytona Beach", ownerState:"FL", absentee:false, signals:["probate","equity","vacant"], detail:{ taxOwed:0, codeViolations:2, vacancyDays:185, lastSale:"1996", listingHistory:"never listed", probateFiled:"2025-08-21" }},
+    { id:25, addr:"5544 Banyan Tree Ln", city:"Sarasota", state:"FL", zip:"34232", value:402000, equityPct:58, yearsOwned:16, beds:3, baths:2, sqft:1780, owner:"Andre & Jean Boutillette", ownerCity:"Montreal", ownerState:"QC", absentee:true, signals:["absentee","equity","expired"], detail:{ taxOwed:0, codeViolations:0, vacancyDays:null, lastSale:"2009", listingHistory:"expired 2025-12 ($429,000, 198 DOM)" }}
+  ];
+
+  const SIGNAL_LABELS = {
+    foreclosure: { label: "Pre-foreclosure", cls: "foreclosure" },
+    absentee:    { label: "Absentee", cls: "absentee" },
+    tax:         { label: "Tax Delinq.", cls: "tax" },
+    equity:      { label: "High Equity", cls: "equity" },
+    probate:     { label: "Probate", cls: "probate" },
+    expired:     { label: "Expired", cls: "expired" },
+    vacant:      { label: "Vacant", cls: "vacant" },
+    code:        { label: "Code Viol.", cls: "code" }
+  };
+
+  let dfState = {
+    activeFilters: new Set(),
+    visible: [...MOCK_PROPERTIES],
+    scores: {},
+    outreachCache: {}
+  };
+
+  function money(n) { return "$" + n.toLocaleString(); }
+
+  function renderResults() {
+    const tbody = document.getElementById('df-table-body');
+    if (!tbody) return;
+    const sort = document.getElementById('df-sort').value;
+    let list = [...dfState.visible];
+    if (sort === 'score') {
+      list.sort((a,b) => (dfState.scores[b.id]?.scoreNum||0) - (dfState.scores[a.id]?.scoreNum||0));
+    } else if (sort === 'equity') {
+      list.sort((a,b) => b.equityPct - a.equityPct);
+    } else if (sort === 'years') {
+      list.sort((a,b) => b.yearsOwned - a.yearsOwned);
+    } else if (sort === 'value') {
+      list.sort((a,b) => b.value - a.value);
+    }
+    document.getElementById('df-results-count').textContent = list.length + ' properties';
+
+    tbody.innerHTML = list.map(p => {
+      const sc = dfState.scores[p.id];
+      const scoreCell = sc
+        ? `<span class="df-score ${sc.grade.toLowerCase()}">${sc.grade}</span>`
+        : `<span class="df-score pending">—</span>`;
+      const equityVal = Math.round(p.value * p.equityPct / 100);
+      const absenteeTag = p.absentee ? `<span class="df-owner-tag">OOS</span>` : '';
+      return `
+        <tr onclick="openDrawer(${p.id})">
+          <td>
+            <div class="df-addr">${p.addr}</div>
+            <div class="df-addr-sub">${p.city}, ${p.state} ${p.zip}</div>
+          </td>
+          <td>
+            <div class="df-signals">
+              ${p.signals.map(s => `<span class="df-signal ${SIGNAL_LABELS[s].cls}">${SIGNAL_LABELS[s].label}</span>`).join('')}
+            </div>
+          </td>
+          <td>${money(p.value)}</td>
+          <td>${p.equityPct}% <span style="color:var(--text-mid);font-size:0.75rem;">(${money(equityVal)})</span></td>
+          <td>${p.owner}${absenteeTag}</td>
+          <td>${scoreCell}</td>
+          <td><div class="df-row-actions">
+            <button class="df-action-btn" onclick="event.stopPropagation(); openDrawer(${p.id})">View</button>
+          </div></td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function applyFilters() {
+    if (dfState.activeFilters.size === 0) {
+      dfState.visible = [...MOCK_PROPERTIES];
+    } else {
+      const map = { 'pre-foreclosure':'foreclosure', 'absentee':'absentee', 'tax-delinquent':'tax', 'high-equity':'equity', 'probate':'probate', 'expired':'expired' };
+      dfState.visible = MOCK_PROPERTIES.filter(p =>
+        [...dfState.activeFilters].every(f => p.signals.includes(map[f]))
+      );
+    }
+    renderResults();
+  }
+
+  function initDealFinder() {
+    document.querySelectorAll('.df-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const f = chip.dataset.filter;
+        if (dfState.activeFilters.has(f)) {
+          dfState.activeFilters.delete(f);
+          chip.classList.remove('active');
+        } else {
+          dfState.activeFilters.add(f);
+          chip.classList.add('active');
+        }
+        applyFilters();
+      });
+    });
+    renderResults();
+  }
+
+  async function runDealSearch() {
+    const q = document.getElementById('df-search-input').value.trim();
+    const status = document.getElementById('df-search-status');
+    const btn = document.getElementById('df-search-btn');
+
+    if (!q) {
+      // No query — just score the visible list
+      btn.disabled = true;
+      btn.textContent = 'Scoring all properties...';
+      status.textContent = 'Running AI opportunity scoring on visible properties...';
+      status.className = 'df-status';
+      await scoreVisibleProperties();
+      btn.disabled = false;
+      btn.innerHTML = 'Search Deals →';
+      status.textContent = `Scored ${dfState.visible.length} properties.`;
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Searching...';
+    status.textContent = 'AI parsing your search...';
+    status.className = 'df-status';
+
+    try {
+      const prompt = `You are a real estate deal-finder query parser. The user typed a natural-language search for distressed properties. Convert it to structured filters.
+
+User query: "${q}"
+
+Available filter signals: foreclosure, absentee, tax, equity, probate, expired, vacant, code.
+Available filterable fields: city (string), state (string), zip (string), minEquityPct (number 0-100), minYearsOwned (number), maxValue (number), minValue (number), outOfStateOwner (boolean).
+
+Return ONLY a JSON object with the keys: signals (array of signal strings the user mentioned), filters (object with the fields above, omit unmentioned), and intent (one-sentence plain English summary of what you understood).
+
+Example output: {"signals":["absentee","equity"],"filters":{"city":"Tampa","minEquityPct":40,"outOfStateOwner":true},"intent":"Out-of-state absentee landlords in Tampa with at least 40% equity"}
+
+Return ONLY the JSON. No prose. No backticks.`;
+
+      const text = await callClaude(prompt, 500);
+      const parsed = parseJSON(text);
+
+      // Apply parsed filters
+      let list = [...MOCK_PROPERTIES];
+      if (parsed.filters?.city) list = list.filter(p => p.city.toLowerCase().includes(parsed.filters.city.toLowerCase()));
+      if (parsed.filters?.zip) list = list.filter(p => p.zip === parsed.filters.zip);
+      if (parsed.filters?.state) list = list.filter(p => p.state.toLowerCase() === parsed.filters.state.toLowerCase());
+      if (parsed.filters?.minEquityPct) list = list.filter(p => p.equityPct >= parsed.filters.minEquityPct);
+      if (parsed.filters?.minYearsOwned) list = list.filter(p => p.yearsOwned >= parsed.filters.minYearsOwned);
+      if (parsed.filters?.maxValue) list = list.filter(p => p.value <= parsed.filters.maxValue);
+      if (parsed.filters?.minValue) list = list.filter(p => p.value >= parsed.filters.minValue);
+      if (parsed.filters?.outOfStateOwner) list = list.filter(p => p.absentee && p.ownerState !== p.state);
+      if (parsed.signals?.length) list = list.filter(p => parsed.signals.every(s => p.signals.includes(s)));
+
+      dfState.visible = list;
+      // Clear chip filters since search overrides them
+      dfState.activeFilters.clear();
+      document.querySelectorAll('.df-chip').forEach(c => c.classList.remove('active'));
+
+      status.innerHTML = `<span style="color:var(--cyan-bright);">AI understood:</span> ${parsed.intent} — found ${list.length} matches. Scoring...`;
+      renderResults();
+      await scoreVisibleProperties();
+      status.innerHTML = `<span style="color:var(--cyan-bright);">AI understood:</span> ${parsed.intent} — ${list.length} matches scored.`;
+    } catch (err) {
+      status.className = 'df-status error';
+      status.textContent = "Couldn't parse that search. Try: \"absentee landlords in Tampa with 40%+ equity\" or use the filter chips above.";
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = 'Search Deals →';
+    }
+  }
+
+  async function scoreVisibleProperties() {
+    // Score in parallel (with a small concurrency cap)
+    const toScore = dfState.visible.filter(p => !dfState.scores[p.id]);
+    if (toScore.length === 0) { renderResults(); return; }
+
+    const CONCURRENCY = 4;
+    let idx = 0;
+    async function worker() {
+      while (idx < toScore.length) {
+        const p = toScore[idx++];
+        try {
+          const sc = await scoreOneProperty(p);
+          dfState.scores[p.id] = sc;
+          renderResults();
+        } catch (e) { /* skip on error */ }
+      }
+    }
+    await Promise.all(Array.from({length: CONCURRENCY}, worker));
+  }
+
+  async function scoreOneProperty(p) {
+    const equityVal = Math.round(p.value * p.equityPct / 100);
+    const signalText = p.signals.map(s => SIGNAL_LABELS[s].label).join(', ');
+    const prompt = `You are an AI deal scoring engine for investor-focused real estate. Grade this property as an off-market opportunity for an investor agent or wholesaler.
+
+Property: ${p.addr}, ${p.city}, ${p.state}
+Estimated value: ${money(p.value)}
+Equity: ${p.equityPct}% (~${money(equityVal)})
+Years owned: ${p.yearsOwned}
+Beds/baths: ${p.beds}/${p.baths}, ${p.sqft} sqft
+Owner: ${p.owner} (${p.ownerCity}, ${p.ownerState})${p.absentee ? ' — OUT OF STATE' : ''}
+Distress signals: ${signalText}
+Detail: ${JSON.stringify(p.detail)}
+
+Grade A through F:
+- A: very strong motivation indicators + significant equity, high likelihood of below-market deal
+- B: solid setup, multiple signals, worth aggressive pursuit
+- C: workable but only one or two signals, moderate equity
+- D: weak signals or thin equity
+- F: avoid
+
+Return ONLY a JSON object: {"grade":"A","reason":"one short sentence","play":"one short suggested approach"}. No prose. No backticks.`;
+
+    const text = await callClaude(prompt, 250);
+    const parsed = parseJSON(text);
+    const gradeNum = { A:5, B:4, C:3, D:2, F:1 }[parsed.grade] || 0;
+    return { grade: parsed.grade, scoreNum: gradeNum, reason: parsed.reason, play: parsed.play };
+  }
+
+  // ============ DRAWER ============
+  function openDrawer(id) {
+    const p = MOCK_PROPERTIES.find(x => x.id === id);
+    if (!p) return;
+    const sc = dfState.scores[p.id];
+    const equityVal = Math.round(p.value * p.equityPct / 100);
+
+    const signalExplanations = {
+      foreclosure: p.detail.nodFiled ? `<strong>Pre-foreclosure</strong> — Notice of Default filed ${p.detail.nodFiled}, ${p.detail.monthsBehind} months behind on payments.` : `<strong>Pre-foreclosure</strong> — currently in foreclosure process.`,
+      absentee:    `<strong>Absentee owner</strong> — owner lives in ${p.ownerCity}, ${p.ownerState} while property is in ${p.city}, ${p.state}.`,
+      tax:         `<strong>Tax delinquent</strong> — ${money(p.detail.taxOwed)} owed${p.detail.taxDelinquentSince ? ', delinquent since ' + p.detail.taxDelinquentSince : ''}.`,
+      equity:      `<strong>High equity</strong> — owner has ~${p.equityPct}% equity (${money(equityVal)}).`,
+      probate:     `<strong>Probate</strong> — estate sale; probate filed ${p.detail.probateFiled}.`,
+      expired:     `<strong>Expired listing</strong> — ${p.detail.listingHistory}.`,
+      vacant:      `<strong>Vacant property</strong> — appears vacant for ${p.detail.vacancyDays} days based on utility / USPS data.`,
+      code:        `<strong>Code violations</strong> — ${p.detail.codeViolations} open code violation(s) on file.`
+    };
+
+    document.getElementById('df-drawer-content').innerHTML = `
+      <div class="dd-section">
+        <div class="dd-label">Property</div>
+        <div class="dd-addr-big">${p.addr}</div>
+        <div class="dd-addr-loc">${p.city}, ${p.state} ${p.zip}</div>
+        <div class="df-signals">
+          ${p.signals.map(s => `<span class="df-signal ${SIGNAL_LABELS[s].cls}">${SIGNAL_LABELS[s].label}</span>`).join('')}
+        </div>
+      </div>
+
+      <div class="dd-section">
+        <div class="dd-stats">
+          <div class="dd-stat"><div class="dd-stat-label">Est. Value</div><div class="dd-stat-val">${money(p.value)}</div></div>
+          <div class="dd-stat"><div class="dd-stat-label">Est. Equity</div><div class="dd-stat-val">${money(equityVal)} (${p.equityPct}%)</div></div>
+          <div class="dd-stat"><div class="dd-stat-label">Years Owned</div><div class="dd-stat-val">${p.yearsOwned}</div></div>
+          <div class="dd-stat"><div class="dd-stat-label">Bd/Ba · Sqft</div><div class="dd-stat-val">${p.beds}/${p.baths} · ${p.sqft.toLocaleString()}</div></div>
+        </div>
+      </div>
+
+      <div class="dd-section">
+        <div class="dd-label">Owner</div>
+        <div style="color:var(--white);font-weight:500;margin-bottom:0.2rem;">${p.owner}</div>
+        <div style="color:var(--text-mid);font-size:0.85rem;">${p.ownerCity}, ${p.ownerState}${p.absentee ? ' · out-of-state owner' : ' · local owner'}</div>
+      </div>
+
+      ${sc ? `
+      <div class="dd-section">
+        <div class="dd-label">AI Opportunity Score</div>
+        <div style="display:flex;align-items:center;gap:0.8rem;margin-bottom:0.6rem;">
+          <span class="df-score ${sc.grade.toLowerCase()}" style="width:52px;height:52px;font-size:1.4rem;">${sc.grade}</span>
+          <div style="color:var(--text-light);font-size:0.9rem;">${sc.reason}</div>
+        </div>
+        <div class="dd-brief"><strong style="color:var(--cyan-bright);">Suggested play:</strong> ${sc.play}</div>
+      </div>` : ''}
+
+      <div class="dd-section">
+        <div class="dd-label">Distress Signals</div>
+        <div class="dd-signal-list">
+          ${p.signals.map(s => `<div class="dd-signal-item">${signalExplanations[s]}</div>`).join('')}
+        </div>
+      </div>
+
+      <div class="dd-section">
+        <div class="dd-label">AI-Drafted Outreach</div>
+        <div class="dd-outreach-tabs">
+          <button class="dd-otab active" onclick="loadOutreach(${p.id}, 'letter')">Letter</button>
+          <button class="dd-otab" onclick="loadOutreach(${p.id}, 'text')">Text</button>
+          <button class="dd-otab" onclick="loadOutreach(${p.id}, 'email')">Email</button>
+        </div>
+        <div class="dd-outreach-body" id="dd-outreach-body">
+          <div class="dd-loading">Generating outreach...</div>
+        </div>
+        <div class="dd-outreach-actions">
+          <button class="dd-btn" onclick="copyOutreach()">📋 Copy</button>
+          <button class="dd-btn primary" onclick="addToPipelineDemo('${p.addr.replace(/'/g,"\\'")}')">➕ Add to Pipeline</button>
+        </div>
+      </div>
+    `;
+    document.getElementById('df-drawer').classList.add('active');
+    document.getElementById('df-drawer-backdrop').classList.add('active');
+    loadOutreach(p.id, 'letter');
+  }
+
+  function closeDrawer() {
+    document.getElementById('df-drawer').classList.remove('active');
+    document.getElementById('df-drawer-backdrop').classList.remove('active');
+  }
+
+  async function loadOutreach(id, channel) {
+    document.querySelectorAll('.dd-otab').forEach(t => t.classList.remove('active'));
+    event && event.target && event.target.classList && event.target.classList.add('active');
+    const body = document.getElementById('dd-outreach-body');
+    body.innerHTML = `<div class="dd-loading">Drafting ${channel}...</div>`;
+
+    const cacheKey = id + ':' + channel;
+    if (dfState.outreachCache[cacheKey]) {
+      body.textContent = dfState.outreachCache[cacheKey];
+      return;
+    }
+
+    const p = MOCK_PROPERTIES.find(x => x.id === id);
+    const primary = p.signals[0];
+    const toneMap = {
+      foreclosure: "empathetic, solution-focused, never desperate — homeowner is in a tough spot and respects honesty",
+      absentee:    "relief-focused, casual, acknowledge the headache of remote ownership",
+      tax:         "discreet, helpful, never shameful — frame around 'options' and 'avoiding bigger issues'",
+      probate:     "extra gentle, condolence-aware, no hard sell, mention helping the estate move forward",
+      equity:      "opportunity-focused, market-based, 'cashing in at the peak'",
+      expired:     "fresh-eyes pitch, different angle than the last agent, results-focused",
+      vacant:      "practical, holding-cost angle, easy exit framing",
+      code:        "discreet, problem-solver framing, 'help getting it back in shape OR sold as-is'"
+    };
+
+    const channelInstr = {
+      letter:  "a direct-mail letter, 150-200 words, signed 'Alex Johnson, Realtywize Real Estate', return address can be a placeholder.",
+      text:    "a SMS text message, MAXIMUM 320 characters across one or two short messages — short, casual, no formal salutation, ends with a question.",
+      email:   "an email with a subject line and body 100-150 words, conversational, ends with clear next step."
+    };
+
+    const prompt = `You are writing first-touch off-market outreach for an investor-focused real estate agent named Alex Johnson at Realtywize. The agent works with cash investors and helps owners sell off-market without listing.
+
+Property: ${p.addr}, ${p.city}, ${p.state}
+Owner: ${p.owner}${p.absentee ? ' (lives in ' + p.ownerCity + ', ' + p.ownerState + ')' : ''}
+Primary distress signal: ${SIGNAL_LABELS[primary].label}
+All signals: ${p.signals.map(s => SIGNAL_LABELS[s].label).join(', ')}
+
+Tone: ${toneMap[primary]}
+
+Format: Write ${channelInstr[channel]}
+
+Rules:
+- Never use the word "distressed"
+- Never sound aggressive or like a wholesaler
+- Don't mention specific dollar amounts
+- Don't promise anything specific
+- For pre-foreclosure outreach, include a short compliance line ("If you've already worked this out with your lender, please disregard this message.") at the end.
+- Never pretend to be a neighbor or use deceptive openers
+
+Return ONLY the message text. ${channel === 'email' ? 'Start with "Subject: ..." on the first line.' : ''} No commentary, no markdown, no quotes around it.`;
+
+    try {
+      const text = await callClaude(prompt, 700);
+      dfState.outreachCache[cacheKey] = text.trim();
+      body.textContent = text.trim();
+    } catch (err) {
+      body.innerHTML = `<span style="color:#ff8585;">Couldn't draft outreach. Try again.</span>`;
+    }
+  }
+
+  function copyOutreach() {
+    const text = document.getElementById('dd-outreach-body').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      const btns = document.querySelectorAll('.dd-outreach-actions .dd-btn');
+      if (btns[0]) {
+        const original = btns[0].textContent;
+        btns[0].textContent = '✓ Copied';
+        setTimeout(() => { btns[0].textContent = original; }, 1500);
+      }
+    });
+  }
+
+  function addToPipelineDemo(addr) {
+    const btns = document.querySelectorAll('.dd-outreach-actions .dd-btn.primary');
+    if (btns[0]) {
+      btns[0].textContent = '✓ Added to Pipeline';
+      btns[0].disabled = true;
+      setTimeout(() => { closeDrawer(); }, 800);
+    }
+  }
+
+  // Initialize on load
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initDealFinder);
+  } else {
+    initDealFinder();
+  }
+</script>
+
+</body>
+</html>

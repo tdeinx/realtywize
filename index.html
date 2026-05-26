@@ -1,0 +1,1528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Realtywize — AI Command Center for Real Estate Agents</title>
+<meta name="description" content="Smarter Leads. Stronger Follow-Up. More Closings. The AI command center built for real estate agents and brokerages.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #000000;
+    --black-soft: #050810;
+    --bg-card: #0a0f1c;
+    --bg-card-hover: #0f1626;
+    --bg-elevated: #131b2e;
+    --cyan: #00d4ff;
+    --cyan-bright: #4ee2ff;
+    --cyan-dim: #0099cc;
+    --cyan-glow: rgba(0, 212, 255, 0.4);
+    --cyan-soft: rgba(0, 212, 255, 0.08);
+    --cyan-border: rgba(0, 212, 255, 0.25);
+    --white: #ffffff;
+    --text-bright: #e8f4ff;
+    --text-mid: #8a99b3;
+    --text-dim: #4d5a72;
+    --border: rgba(138, 153, 179, 0.12);
+    --border-bright: rgba(0, 212, 255, 0.3);
+    --hot: #ff5e7a;
+    --hot-bg: rgba(255, 94, 122, 0.15);
+    --warm: #ffb547;
+    --warm-bg: rgba(255, 181, 71, 0.15);
+    --cold: #6088b8;
+    --cold-bg: rgba(96, 136, 184, 0.15);
+    --green: #2dd4a0;
+    --purple: #a78bfa;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Sora', -apple-system, sans-serif;
+    background: var(--black);
+    color: var(--text-bright);
+    line-height: 1.55;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ============ STARFIELD BACKGROUND ============ */
+  .starfield {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background:
+      radial-gradient(2px 2px at 23% 14%, rgba(0,212,255,0.4) 50%, transparent),
+      radial-gradient(1px 1px at 67% 41%, rgba(0,212,255,0.3) 50%, transparent),
+      radial-gradient(1px 1px at 12% 78%, rgba(78,226,255,0.4) 50%, transparent),
+      radial-gradient(2px 2px at 89% 23%, rgba(0,212,255,0.25) 50%, transparent),
+      radial-gradient(1px 1px at 45% 65%, rgba(0,212,255,0.3) 50%, transparent),
+      radial-gradient(1px 1px at 78% 89%, rgba(78,226,255,0.3) 50%, transparent),
+      radial-gradient(1px 1px at 33% 33%, rgba(0,212,255,0.2) 50%, transparent),
+      radial-gradient(2px 2px at 56% 12%, rgba(0,212,255,0.3) 50%, transparent);
+    opacity: 0.6;
+  }
+
+  /* ============ NAV ============ */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    padding: 1.25rem 3rem;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-inner {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    text-decoration: none;
+    color: var(--white);
+  }
+  .logo-icon {
+    width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .logo-text {
+    font-family: 'Sora', sans-serif;
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+  .logo-text span { color: var(--cyan); font-weight: 700; }
+  .nav-links { display: flex; gap: 2.5rem; align-items: center; }
+  .nav-links a {
+    color: var(--text-mid);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--cyan); }
+  .btn-nav {
+    padding: 0.7rem 1.4rem;
+    background: var(--cyan);
+    color: var(--black);
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.88rem;
+    transition: all 0.2s;
+    box-shadow: 0 0 24px rgba(0, 212, 255, 0.3);
+  }
+  .btn-nav:hover {
+    background: var(--cyan-bright);
+    color: var(--black) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 0 32px rgba(0, 212, 255, 0.5);
+  }
+
+  /* ============ HERO ============ */
+  .hero {
+    position: relative;
+    min-height: 100vh;
+    padding: 10rem 3rem 5rem;
+    overflow: hidden;
+    z-index: 1;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: 10%; left: 50%;
+    transform: translateX(-50%);
+    width: 700px; height: 700px;
+    background: radial-gradient(circle, var(--cyan-glow) 0%, transparent 60%);
+    opacity: 0.3;
+    filter: blur(80px);
+    pointer-events: none;
+  }
+  .hero::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0, 212, 255, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 212, 255, 0.04) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  }
+  .hero-inner {
+    max-width: 1400px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+    text-align: center;
+  }
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.5rem 1.1rem;
+    background: var(--cyan-soft);
+    border: 1px solid var(--cyan-border);
+    border-radius: 999px;
+    color: var(--cyan-bright);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-bottom: 2rem;
+  }
+  .eyebrow::before {
+    content: '';
+    width: 6px; height: 6px;
+    background: var(--cyan);
+    border-radius: 50%;
+    box-shadow: 0 0 12px var(--cyan), 0 0 6px var(--cyan);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 12px var(--cyan), 0 0 6px var(--cyan); }
+    50% { opacity: 0.6; box-shadow: 0 0 6px var(--cyan), 0 0 3px var(--cyan); }
+  }
+  h1.hero-title {
+    font-family: 'Sora', sans-serif;
+    font-size: clamp(2.5rem, 6.5vw, 5.5rem);
+    line-height: 1;
+    color: var(--white);
+    margin-bottom: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    max-width: 1000px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  h1.hero-title .cyan-text {
+    color: var(--cyan);
+    background: linear-gradient(135deg, var(--cyan) 0%, var(--cyan-bright) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .hero-sub {
+    font-size: 1.2rem;
+    color: var(--text-mid);
+    line-height: 1.55;
+    max-width: 640px;
+    margin: 0 auto 2.5rem;
+  }
+  .hero-cta {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 5rem;
+  }
+  .btn-primary {
+    padding: 1.05rem 2.2rem;
+    background: var(--cyan);
+    color: var(--black);
+    border: none;
+    border-radius: 10px;
+    font-family: 'Sora', sans-serif;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.25s;
+    box-shadow: 0 0 32px rgba(0, 212, 255, 0.4), 0 0 0 1px rgba(0, 212, 255, 0.3);
+  }
+  .btn-primary:hover {
+    background: var(--cyan-bright);
+    transform: translateY(-2px);
+    box-shadow: 0 0 48px rgba(0, 212, 255, 0.6), 0 0 0 1px rgba(0, 212, 255, 0.5);
+  }
+  .btn-secondary {
+    padding: 1.05rem 2.2rem;
+    background: transparent;
+    color: var(--white);
+    border: 1px solid var(--cyan-border);
+    border-radius: 10px;
+    font-family: 'Sora', sans-serif;
+    font-weight: 500;
+    font-size: 0.95rem;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.25s;
+  }
+  .btn-secondary:hover {
+    border-color: var(--cyan);
+    color: var(--cyan-bright);
+    background: var(--cyan-soft);
+  }
+
+  /* ============ DASHBOARD PREVIEW (HERO BOTTOM) ============ */
+  .dash-preview {
+    max-width: 1240px;
+    margin: 0 auto;
+    background: linear-gradient(180deg, var(--bg-card) 0%, var(--black) 100%);
+    border: 1px solid var(--cyan-border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    position: relative;
+    box-shadow:
+      0 0 60px rgba(0, 212, 255, 0.15),
+      0 30px 100px rgba(0, 0, 0, 0.5),
+      inset 0 0 0 1px rgba(0, 212, 255, 0.05);
+  }
+  .dash-preview::before {
+    content: '';
+    position: absolute;
+    top: -2px; left: 10%;
+    right: 10%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+    box-shadow: 0 0 20px var(--cyan);
+  }
+  .dash-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1.25rem;
+  }
+  .dash-bar .dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: rgba(138, 153, 179, 0.2);
+  }
+  .dash-bar .dot:first-child { background: var(--cyan); }
+  .dash-bar .url {
+    margin-left: 0.75rem;
+    padding: 0.3rem 0.9rem;
+    background: var(--bg-elevated);
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--text-mid);
+  }
+  .dash-bar .url span { color: var(--cyan); }
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.85rem;
+    margin-bottom: 1rem;
+  }
+  .kpi {
+    padding: 1rem 1.2rem;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+  }
+  .kpi-icon {
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+  }
+  .kpi-icon.cyan { background: rgba(0, 212, 255, 0.15); color: var(--cyan); }
+  .kpi-icon.green { background: rgba(45, 212, 160, 0.15); color: var(--green); }
+  .kpi-icon.purple { background: rgba(167, 139, 250, 0.15); color: var(--purple); }
+  .kpi-icon.warm { background: rgba(255, 181, 71, 0.15); color: var(--warm); }
+  .kpi-num {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--white);
+    line-height: 1;
+  }
+  .kpi-label {
+    font-size: 0.7rem;
+    color: var(--text-mid);
+    margin-top: 0.25rem;
+  }
+  .kpi-change {
+    font-size: 0.65rem;
+    color: var(--green);
+    margin-top: 0.15rem;
+  }
+  .dash-grid {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 0.85rem;
+  }
+  .dash-block {
+    padding: 1rem;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+  .dash-block .block-title {
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-mid);
+    margin-bottom: 0.85rem;
+    font-weight: 600;
+  }
+  .pipeline-bars {
+    display: flex;
+    gap: 0.5rem;
+    align-items: end;
+    height: 80px;
+  }
+  .pipe-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .pipe-bar {
+    width: 100%;
+    background: linear-gradient(180deg, var(--cyan) 0%, var(--cyan-dim) 100%);
+    border-radius: 4px 4px 0 0;
+    opacity: 0.7;
+  }
+  .pipe-bar.b1 { height: 80%; }
+  .pipe-bar.b2 { height: 60%; opacity: 0.85; }
+  .pipe-bar.b3 { height: 55%; }
+  .pipe-bar.b4 { height: 40%; opacity: 0.8; }
+  .pipe-bar.b5 { height: 50%; background: linear-gradient(180deg, var(--green) 0%, #1aa67d 100%); opacity: 1; }
+  .pipe-label {
+    font-size: 0.6rem;
+    color: var(--text-dim);
+  }
+  .conv-list { display: flex; flex-direction: column; gap: 0.55rem; }
+  .conv-item {
+    display: flex;
+    gap: 0.6rem;
+    padding: 0.5rem;
+    background: var(--bg-card);
+    border-radius: 6px;
+    align-items: center;
+  }
+  .conv-avatar {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--cyan-dim), var(--purple));
+    flex-shrink: 0;
+  }
+  .conv-text {
+    flex: 1;
+    overflow: hidden;
+  }
+  .conv-name { font-size: 0.75rem; color: var(--white); font-weight: 600; }
+  .conv-msg {
+    font-size: 0.68rem;
+    color: var(--text-mid);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .conv-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    flex-shrink: 0;
+  }
+
+  /* ============ TAGLINE STRIP ============ */
+  .tagline-strip {
+    padding: 4rem 3rem;
+    background: var(--black);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    z-index: 1;
+  }
+  .tagline-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    text-align: center;
+  }
+  .tagline-inner h2 {
+    font-size: clamp(1.5rem, 3vw, 2.25rem);
+    font-weight: 600;
+    color: var(--white);
+    letter-spacing: -0.02em;
+    line-height: 1.3;
+  }
+  .tagline-inner h2 .cyan-text { color: var(--cyan); }
+  .tagline-inner .built-by {
+    margin-top: 1.5rem;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+  .tagline-inner .built-by span { color: var(--cyan); }
+
+  /* ============ SECTIONS ============ */
+  section { padding: 6rem 3rem; position: relative; z-index: 1; }
+  .section-inner { max-width: 1400px; margin: 0 auto; }
+  .section-header { text-align: center; margin-bottom: 4rem; }
+  .section-eyebrow {
+    display: inline-block;
+    color: var(--cyan);
+    font-size: 0.78rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+  h2.section-title {
+    font-family: 'Sora', sans-serif;
+    font-size: clamp(2rem, 4.5vw, 3.5rem);
+    line-height: 1.1;
+    color: var(--white);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    max-width: 900px;
+    margin: 0 auto 1.25rem;
+  }
+  h2.section-title .cyan-text { color: var(--cyan); }
+  .section-sub {
+    color: var(--text-mid);
+    font-size: 1.05rem;
+    max-width: 640px;
+    margin: 0 auto;
+    line-height: 1.65;
+  }
+
+  /* ============ FEATURE GRID ============ */
+  .features-section {
+    background: linear-gradient(180deg, var(--black) 0%, var(--black-soft) 100%);
+  }
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+  }
+  .feature-card {
+    padding: 2rem 1.75rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+  .feature-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .feature-card:hover {
+    border-color: var(--cyan-border);
+    background: var(--bg-card-hover);
+    transform: translateY(-4px);
+  }
+  .feature-card:hover::before { opacity: 1; }
+  .feature-icon {
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    background: rgba(0, 212, 255, 0.12);
+    color: var(--cyan);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    margin-bottom: 1.25rem;
+    border: 1px solid var(--cyan-border);
+  }
+  .feature-card h3 {
+    font-size: 1.25rem;
+    color: var(--white);
+    font-weight: 600;
+    margin-bottom: 0.65rem;
+    letter-spacing: -0.01em;
+  }
+  .feature-card p {
+    color: var(--text-mid);
+    font-size: 0.92rem;
+    line-height: 1.6;
+  }
+
+  /* ============ AI TOOLS SECTION (the 3 hero features) ============ */
+  .ai-tools-section { background: var(--black); }
+  .tools-stack { display: grid; gap: 4rem; }
+  .tool-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
+    align-items: center;
+  }
+  .tool-row.reverse { direction: rtl; }
+  .tool-row.reverse > * { direction: ltr; }
+  .tool-text .tool-label {
+    display: inline-block;
+    padding: 0.3rem 0.85rem;
+    background: var(--cyan-soft);
+    color: var(--cyan);
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-bottom: 1.25rem;
+    border: 1px solid var(--cyan-border);
+  }
+  .tool-text h3 {
+    font-size: clamp(1.85rem, 3.2vw, 2.5rem);
+    color: var(--white);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+    margin-bottom: 1.25rem;
+  }
+  .tool-text h3 .cyan-text { color: var(--cyan); }
+  .tool-text p {
+    color: var(--text-mid);
+    font-size: 1rem;
+    line-height: 1.65;
+    margin-bottom: 1.5rem;
+  }
+  .tool-text ul { list-style: none; }
+  .tool-text ul li {
+    padding: 0.5rem 0;
+    color: var(--text-bright);
+    font-size: 0.95rem;
+    display: flex;
+    align-items: start;
+    gap: 0.75rem;
+  }
+  .tool-text ul li::before {
+    content: '▸';
+    color: var(--cyan);
+    font-size: 0.85rem;
+    margin-top: 0.15rem;
+  }
+  .tool-visual {
+    background: var(--bg-card);
+    border: 1px solid var(--cyan-border);
+    border-radius: 14px;
+    padding: 1.75rem;
+    min-height: 340px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 0 40px rgba(0, 212, 255, 0.08);
+  }
+  .tool-visual::before {
+    content: '';
+    position: absolute;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background: radial-gradient(circle, rgba(0, 212, 255, 0.06) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  /* Scoring visual */
+  .v-scoring { position: relative; z-index: 1; }
+  .v-input {
+    padding: 1rem;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    color: var(--text-bright);
+    font-style: italic;
+    margin-bottom: 0.85rem;
+  }
+  .v-arrow { text-align: center; color: var(--cyan); font-size: 1.25rem; margin: 0.6rem 0; }
+  .v-output {
+    padding: 1rem;
+    background: linear-gradient(135deg, rgba(0, 212, 255, 0.06), var(--bg-elevated));
+    border: 1px solid var(--cyan-border);
+    border-radius: 8px;
+  }
+  .v-output .out-row {
+    display: flex; justify-content: space-between;
+    padding: 0.3rem 0; font-size: 0.85rem;
+  }
+  .v-output .out-row span:first-child { color: var(--text-mid); }
+  .v-output .out-row span:last-child { color: var(--white); font-weight: 500; }
+  /* Valuation visual */
+  .v-val { position: relative; z-index: 1; }
+  .v-addr {
+    padding: 0.9rem;
+    background: var(--bg-elevated);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    color: var(--text-bright);
+    margin-bottom: 1rem;
+    border: 1px solid var(--border);
+  }
+  .v-result {
+    text-align: center;
+    padding: 2rem 1rem;
+    background: linear-gradient(135deg, rgba(0, 212, 255, 0.08), var(--bg-elevated));
+    border: 1px solid var(--cyan-border);
+    border-radius: 10px;
+  }
+  .v-result .lbl { font-size: 0.72rem; letter-spacing: 0.18em; color: var(--text-mid); text-transform: uppercase; margin-bottom: 0.5rem; }
+  .v-result .price {
+    font-size: 2.75rem;
+    color: var(--cyan);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    text-shadow: 0 0 30px rgba(0, 212, 255, 0.3);
+  }
+  .v-result .rng { color: var(--text-mid); font-size: 0.85rem; margin-top: 0.4rem; }
+  /* Investor visual */
+  .v-inv { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 0.75rem; }
+  .v-deal {
+    padding: 0.95rem;
+    background: var(--bg-elevated);
+    border-radius: 8px;
+    border-left: 3px solid var(--cyan);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .v-deal.warm { border-left-color: var(--warm); }
+  .v-deal.cold { border-left-color: var(--cold); }
+  .v-deal .addr { font-size: 0.88rem; color: var(--white); font-weight: 600; }
+  .v-deal .sub { font-size: 0.74rem; color: var(--text-mid); margin-top: 0.2rem; }
+  .v-deal .score {
+    font-size: 1.6rem;
+    color: var(--cyan);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  .v-deal.warm .score { color: var(--warm); }
+  .v-deal.cold .score { color: var(--cold); }
+
+  /* ============ HOW IT WORKS ============ */
+  .how { background: linear-gradient(180deg, var(--black-soft) 0%, var(--black) 100%); }
+  .how-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+    margin-top: 3rem;
+    position: relative;
+  }
+  .how-step {
+    text-align: center;
+    padding: 2rem 1.25rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    position: relative;
+    transition: all 0.3s;
+  }
+  .how-step:hover {
+    border-color: var(--cyan-border);
+    transform: translateY(-3px);
+  }
+  .how-num {
+    font-size: 2.5rem;
+    color: var(--cyan);
+    line-height: 1;
+    margin-bottom: 0.85rem;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    text-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+  }
+  .how-step h4 {
+    font-size: 1.1rem;
+    color: var(--white);
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+  .how-step p {
+    font-size: 0.85rem;
+    color: var(--text-mid);
+    line-height: 1.55;
+  }
+
+  /* ============ PRICING ============ */
+  .pricing { background: var(--black); }
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.25rem;
+  }
+  .price-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem 1.5rem;
+    position: relative;
+    transition: all 0.3s;
+  }
+  .price-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--cyan-border);
+  }
+  .price-card.featured {
+    background: linear-gradient(180deg, var(--bg-elevated) 0%, var(--bg-card) 100%);
+    border-color: var(--cyan);
+    box-shadow: 0 0 40px rgba(0, 212, 255, 0.15), 0 0 0 1px rgba(0, 212, 255, 0.1);
+  }
+  .price-badge {
+    position: absolute;
+    top: -12px; left: 50%;
+    transform: translateX(-50%);
+    background: var(--cyan);
+    color: var(--black);
+    padding: 0.35rem 1.1rem;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+  }
+  .price-name {
+    font-size: 1.35rem;
+    color: var(--white);
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+  }
+  .price-amount {
+    font-size: 3rem;
+    color: var(--cyan);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    margin: 1.25rem 0 0.25rem;
+  }
+  .price-amount sup { font-size: 1.25rem; opacity: 0.7; margin-right: 0.15rem; }
+  .price-period { color: var(--text-mid); font-size: 0.85rem; margin-bottom: 0.5rem; }
+  .price-setup {
+    color: var(--text-dim);
+    font-size: 0.8rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1.5rem;
+  }
+  .price-list { list-style: none; margin-bottom: 2rem; }
+  .price-list li {
+    padding: 0.5rem 0;
+    color: var(--text-bright);
+    font-size: 0.9rem;
+    display: flex; align-items: start; gap: 0.65rem;
+  }
+  .price-list li::before {
+    content: '✓';
+    color: var(--cyan);
+    font-weight: 700;
+  }
+  .price-list li.muted { color: var(--text-dim); }
+  .price-list li.muted::before { content: '—'; color: var(--text-dim); }
+  .btn-price {
+    width: 100%;
+    padding: 0.95rem;
+    background: transparent;
+    color: var(--white);
+    border: 1px solid var(--cyan-border);
+    border-radius: 10px;
+    font-family: 'Sora', sans-serif;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    text-decoration: none;
+    display: block;
+    text-align: center;
+    transition: all 0.25s;
+  }
+  .btn-price:hover {
+    background: var(--cyan-soft);
+    border-color: var(--cyan);
+    color: var(--cyan-bright);
+  }
+  .price-card.featured .btn-price {
+    background: var(--cyan);
+    color: var(--black);
+    border-color: var(--cyan);
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+  }
+  .price-card.featured .btn-price:hover {
+    background: var(--cyan-bright);
+    border-color: var(--cyan-bright);
+    box-shadow: 0 0 30px rgba(0, 212, 255, 0.5);
+  }
+
+
+  /* Single price card layout */
+  .single-price-wrap {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2rem;
+  }
+  .single-price-card {
+    max-width: 620px;
+    width: 100%;
+    text-align: center;
+    padding: 2.5rem 2.5rem 2rem;
+  }
+  .investor-setup {
+    color: var(--text-mid) !important;
+    font-style: italic;
+    font-size: 0.8rem !important;
+  }
+  .spc-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 2rem;
+    margin: 1.75rem 0 1.5rem;
+    text-align: left;
+  }
+  .spc-columns .price-list { margin-bottom: 0; }
+  .spc-trial-note {
+    margin-top: 0.85rem;
+    color: var(--text-mid);
+    font-size: 0.8rem;
+  }
+
+  /* Brokerage line */
+  .brokerage-line {
+    max-width: 720px;
+    margin: 0 auto 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 1rem 1.4rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .bl-icon { font-size: 1.4rem; flex-shrink: 0; }
+  .bl-text {
+    color: var(--text-light);
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+  .bl-text strong { color: var(--white); }
+  .bl-link {
+    color: var(--cyan-bright);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .bl-link:hover { text-decoration: underline; }
+
+
+  .pricing-strategy {
+    max-width: 1080px;
+    margin: 3rem auto 0;
+    padding: 1.5rem 1.75rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+  }
+  .ps-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.75rem;
+  }
+  .ps-col {
+    padding-left: 1rem;
+    border-left: 2px solid var(--cyan);
+  }
+  .ps-label {
+    color: var(--cyan-bright);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  }
+  .ps-text {
+    color: var(--text-light);
+    font-size: 0.85rem;
+    line-height: 1.55;
+  }
+  .ps-text strong { color: var(--white); }
+  @media (max-width: 820px) {
+    .ps-row { grid-template-columns: 1fr; gap: 1.25rem; }
+  }
+
+  @media (max-width: 720px) {
+    .spc-columns { grid-template-columns: 1fr; gap: 0; }
+    .single-price-card { padding: 2rem 1.5rem; }
+    .brokerage-line { flex-direction: column; text-align: center; gap: 0.5rem; }
+  }
+
+  /* ============ CTA ============ */
+  .cta-final {
+    padding: 7rem 3rem;
+    background: var(--black);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+  }
+  .cta-final::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at center, var(--cyan-soft) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .cta-inner { max-width: 800px; margin: 0 auto; position: relative; z-index: 1; }
+  .cta-final h2 {
+    font-size: clamp(2.25rem, 5vw, 3.75rem);
+    color: var(--white);
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    line-height: 1.1;
+    margin-bottom: 1.5rem;
+  }
+  .cta-final h2 .cyan-text { color: var(--cyan); }
+  .cta-final p {
+    color: var(--text-mid);
+    font-size: 1.1rem;
+    margin-bottom: 2.5rem;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* ============ FOOTER ============ */
+  footer {
+    background: var(--black);
+    padding: 3rem;
+    border-top: 1px solid var(--border);
+    position: relative;
+    z-index: 1;
+  }
+  .footer-inner {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+  }
+  .footer-meta { color: var(--text-dim); font-size: 0.82rem; }
+  .footer-links { display: flex; gap: 2rem; }
+  .footer-links a { color: var(--text-mid); text-decoration: none; font-size: 0.85rem; transition: color 0.2s; }
+  .footer-links a:hover { color: var(--cyan); }
+
+  /* ============ FADE IN ============ */
+  .fade-in { opacity: 0; transform: translateY(20px); transition: all 0.7s ease; }
+  .fade-in.visible { opacity: 1; transform: translateY(0); }
+
+  /* ============ RESPONSIVE ============ */
+  @media (max-width: 1024px) {
+    .tool-row { grid-template-columns: 1fr; gap: 2rem; }
+    .tool-row.reverse { direction: ltr; }
+    .feature-grid { grid-template-columns: 1fr 1fr; }
+    .how-grid { grid-template-columns: repeat(2, 1fr); }
+    .kpi-row { grid-template-columns: repeat(2, 1fr); }
+    .dash-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 640px) {
+    nav { padding: 1rem 1.25rem; }
+    .nav-links { gap: 1rem; }
+    .nav-links a:not(.btn-nav) { display: none; }
+    .hero, section, .cta-final { padding: 5rem 1.25rem; }
+    .hero { padding-top: 7rem; }
+    .feature-grid { grid-template-columns: 1fr; }
+    .how-grid { grid-template-columns: 1fr; }
+    .kpi-row { grid-template-columns: 1fr 1fr; }
+    .tagline-strip { padding: 3rem 1.25rem; }
+    footer { padding: 2rem 1.25rem; }
+    .footer-inner { flex-direction: column; text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<div class="starfield"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a href="#" class="logo">
+      <div class="logo-icon">
+        <svg width="36" height="36" viewBox="0 0 40 40" fill="none">
+          <defs>
+            <linearGradient id="cyanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#4ee2ff"/>
+              <stop offset="100%" stop-color="#0099cc"/>
+            </linearGradient>
+          </defs>
+          <path d="M6 18 L20 6 L34 18 L34 35 L24 35 L24 24 L16 24 L16 35 L6 35 Z" stroke="url(#cyanGrad)" stroke-width="2.5" fill="none" stroke-linejoin="round"/>
+          <path d="M18 14 L24 14 L24 20 L18 20 Z M18 14 L18 22 M21 16 L24 16 M21 18 L24 18" stroke="url(#cyanGrad)" stroke-width="2" fill="none" stroke-linejoin="round" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="logo-text">REALTY<span>WIZE</span></div>
+    </a>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#how">How It Works</a>
+      <a href="#pricing">Pricing</a>
+      <a href="/app" class="btn-nav">Launch Demo →</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-inner">
+    <div class="eyebrow">AI Command Center for Real Estate</div>
+    <h1 class="hero-title">Smarter Leads. Stronger Follow-Up. <span class="cyan-text">More Closings.</span></h1>
+    <p class="hero-sub">Realtywize is the all-in-one AI command center that helps real estate agents and brokerages capture more leads, automate follow-up, nurture clients, and close more deals — without lifting a finger.</p>
+    <div class="hero-cta">
+      <a href="/app" class="btn-primary">Launch Live Demo →</a>
+      <a href="#pricing" class="btn-secondary">See Pricing</a>
+    </div>
+
+    <!-- Dashboard Preview -->
+    <div class="dash-preview">
+      <div class="dash-bar">
+        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+        <div class="url">app.realty<span>wize</span>.ai/dashboard</div>
+      </div>
+      <div class="kpi-row">
+        <div class="kpi">
+          <div class="kpi-icon cyan">👥</div>
+          <div>
+            <div class="kpi-num">247</div>
+            <div class="kpi-label">New Leads</div>
+            <div class="kpi-change">↑ 38% this week</div>
+          </div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-icon green">💬</div>
+          <div>
+            <div class="kpi-num">183</div>
+            <div class="kpi-label">Conversations</div>
+            <div class="kpi-change">↑ 27% this week</div>
+          </div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-icon purple">📅</div>
+          <div>
+            <div class="kpi-num">32</div>
+            <div class="kpi-label">Appointments</div>
+            <div class="kpi-change">↑ 18% this week</div>
+          </div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-icon warm">🏠</div>
+          <div>
+            <div class="kpi-num">12</div>
+            <div class="kpi-label">Deals Closed</div>
+            <div class="kpi-change">↑ 20% this month</div>
+          </div>
+        </div>
+      </div>
+      <div class="dash-grid">
+        <div class="dash-block">
+          <div class="block-title">Pipeline Overview</div>
+          <div class="pipeline-bars">
+            <div class="pipe-col"><div class="pipe-bar b1"></div><div class="pipe-label">New</div></div>
+            <div class="pipe-col"><div class="pipe-bar b2"></div><div class="pipe-label">Contacted</div></div>
+            <div class="pipe-col"><div class="pipe-bar b3"></div><div class="pipe-label">Qualified</div></div>
+            <div class="pipe-col"><div class="pipe-bar b4"></div><div class="pipe-label">Proposal</div></div>
+            <div class="pipe-col"><div class="pipe-bar b5"></div><div class="pipe-label">Closed</div></div>
+          </div>
+        </div>
+        <div class="dash-block">
+          <div class="block-title">Live Conversations</div>
+          <div class="conv-list">
+            <div class="conv-item">
+              <div class="conv-avatar"></div>
+              <div class="conv-text">
+                <div class="conv-name">Jessica Moore</div>
+                <div class="conv-msg">Hi, I'm interested in 123 Main St...</div>
+              </div>
+              <div class="conv-dot"></div>
+            </div>
+            <div class="conv-item">
+              <div class="conv-avatar" style="background: linear-gradient(135deg, var(--cyan), var(--green));"></div>
+              <div class="conv-text">
+                <div class="conv-name">Michael Smith</div>
+                <div class="conv-msg">Do you have anything in the...</div>
+              </div>
+              <div class="conv-dot"></div>
+            </div>
+            <div class="conv-item">
+              <div class="conv-avatar" style="background: linear-gradient(135deg, var(--purple), var(--cyan));"></div>
+              <div class="conv-text">
+                <div class="conv-name">Samantha Lee</div>
+                <div class="conv-msg">I'd like to schedule a showing...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TAGLINE STRIP -->
+<div class="tagline-strip">
+  <div class="tagline-inner">
+    <h2>The AI engine quietly working behind <span class="cyan-text">every successful agent.</span></h2>
+    <div class="built-by">Built by <span>HGIA Solutions</span> · AI Systems. Real Results.</div>
+  </div>
+</div>
+
+<!-- FEATURES GRID -->
+<section class="features-section" id="features">
+  <div class="section-inner">
+    <div class="section-header">
+      <div class="section-eyebrow">What's Inside</div>
+      <h2 class="section-title">A complete agent stack, <span class="cyan-text">running on AI.</span></h2>
+      <p class="section-sub">Everything you'd normally cobble together from five different tools — leads, conversations, calendars, deals, marketing — unified in one intelligent command center.</p>
+    </div>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="feature-icon">👥</div>
+        <h3>AI Lead Capture</h3>
+        <p>Capture leads from ads, websites, and portals 24/7 — automatically scored Hot, Warm, or Cold the moment they hit your inbox.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">💬</div>
+        <h3>Smart Follow-Up</h3>
+        <p>AI-powered follow-ups via SMS, email, and voice — personalized to each lead's stage, source, and intent signals.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📅</div>
+        <h3>Appointment Booking</h3>
+        <p>Book showings and consultations automatically without your team playing scheduling tag with prospects.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <h3>Deal Pipeline</h3>
+        <p>Track leads, deals, tasks, and client activity in one unified view — with AI surfacing what needs attention.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📈</div>
+        <h3>Performance Analytics</h3>
+        <p>Real-time insights into lead sources, conversion rates, and team performance to grow your business.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🎯</div>
+        <h3>AI Deal Finder</h3>
+        <p>Plug into BatchData or PropStream. AI scores off-market opportunities A–F and drafts owner outreach. Distressed property engine for serious operators.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- AI TOOLS — Three Deep Features -->
+<section class="ai-tools-section">
+  <div class="section-inner">
+    <div class="section-header">
+      <div class="section-eyebrow">Power Tools</div>
+      <h2 class="section-title">Four AI tools, <span class="cyan-text">built for closers.</span></h2>
+      <p class="section-sub">Beyond the command center, Realtywize ships with four specialized AI tools that solve real estate's biggest revenue leaks.</p>
+    </div>
+
+    <div class="tools-stack">
+
+      <!-- TOOL 1: Lead Scoring -->
+      <div class="tool-row">
+        <div class="tool-text">
+          <span class="tool-label">01 · Lead Scoring</span>
+          <h3>Every inquiry, <span class="cyan-text">instantly classified.</span></h3>
+          <p>Paste any incoming message — text, email, web form, DM. Realtywize tells you who's ready to transact, who needs nurturing, and who's just window shopping.</p>
+          <ul>
+            <li>Hot / Warm / Cold scoring with confidence rating</li>
+            <li>Buyer vs. seller vs. investor classification</li>
+            <li>One-line summary and recommended next action</li>
+            <li>AI-drafted personalized reply ready to send</li>
+          </ul>
+        </div>
+        <div class="tool-visual">
+          <div class="v-scoring">
+            <div class="v-input">"Hey — saw your listing on Providence Rd. We're relocating from Chicago in July, cash buyers, would love to walk it this weekend."</div>
+            <div class="v-arrow">↓</div>
+            <div class="v-output">
+              <div class="out-row"><span>Score</span><span style="color: var(--hot);">🔥 HOT · 94%</span></div>
+              <div class="out-row"><span>Type</span><span>Cash Buyer · Relocating</span></div>
+              <div class="out-row"><span>Urgency</span><span>This Weekend</span></div>
+              <div class="out-row"><span>Action</span><span style="color: var(--cyan);">Book showing immediately</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TOOL 2: Home Valuation -->
+      <div class="tool-row reverse">
+        <div class="tool-text">
+          <span class="tool-label">02 · Home Valuation</span>
+          <h3>The fastest seller lead magnet <span class="cyan-text">in real estate.</span></h3>
+          <p>An embedded AI valuation tool that gives prospects a smart price range in seconds — and gives you a warm seller lead with full context every single time.</p>
+          <ul>
+            <li>Address-based instant value estimate</li>
+            <li>Low / mid / high range with AI commentary</li>
+            <li>Captures name, email, phone, and timeline-to-sell</li>
+            <li>Auto-tagged Hot or Warm based on seller readiness</li>
+          </ul>
+        </div>
+        <div class="tool-visual">
+          <div class="v-val">
+            <div class="v-addr">📍 4271 Sharon Rd, Charlotte NC 28211<br><span style="color: var(--text-dim); font-size: 0.75rem;">3BR · 2.5BA · 2,140 sqft · Built 1998</span></div>
+            <div class="v-result">
+              <div class="lbl">AI Estimated Value</div>
+              <div class="price">$685K</div>
+              <div class="rng">Range: $642K — $728K</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TOOL 3: Investor Deal Screener -->
+      <div class="tool-row">
+        <div class="tool-text">
+          <span class="tool-label">03 · Investor Deal Screener</span>
+          <h3>Stop wasting time on <span class="cyan-text">bad deals.</span></h3>
+          <p>Drop in a property's stats — purchase price, rehab estimate, ARV, location. Realtywize scores it for cash flow, BRRRR fit, flip potential, and risk.</p>
+          <ul>
+            <li>Cash flow and ROI math computed instantly</li>
+            <li>BRRRR, flip, and hold strategy fit analysis</li>
+            <li>Deal grade A through F with reasoning</li>
+            <li>Comparable area data and market context</li>
+          </ul>
+        </div>
+        <div class="tool-visual">
+          <div class="v-inv">
+            <div class="v-deal">
+              <div>
+                <div class="addr">812 N Brevard St</div>
+                <div class="sub">$245K → $385K ARV · 25% margin</div>
+              </div>
+              <div class="score">A</div>
+            </div>
+            <div class="v-deal warm">
+              <div>
+                <div class="addr">1418 Beatties Ford Rd</div>
+                <div class="sub">$155K hold · $1,650 rent · 8.4% CoC</div>
+              </div>
+              <div class="score">B+</div>
+            </div>
+            <div class="v-deal cold">
+              <div>
+                <div class="addr">2204 Tuckaseegee Rd</div>
+                <div class="sub">$298K · thin margins · high reno risk</div>
+              </div>
+              <div class="score">C</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TOOL 4: AI Deal Finder -->
+      <div class="tool-row reverse">
+        <div class="tool-text">
+          <span class="tool-label">04 · AI Deal Finder</span>
+          <h3>Off-market intelligence. <span class="cyan-text">Distressed property engine.</span></h3>
+          <p>Plug Realtywize into your BatchData, PropStream, or county records feed. Search in plain English. AI scores every property A–F, drafts the owner outreach, and queues your follow-up — all in seconds.</p>
+          <ul>
+            <li>Natural language search: "absentee landlords in Tampa with 40%+ equity"</li>
+            <li>AI opportunity scoring A–F across pre-foreclosure, probate, absentee, tax delinquent, high equity, expired</li>
+            <li>Personalized outreach drafted per signal type (letter / text / email)</li>
+            <li>One-click add-to-pipeline with auto follow-up sequences</li>
+            <li>Brings your own data provider — Realtywize is the AI workflow layer</li>
+          </ul>
+        </div>
+        <div class="tool-visual">
+          <div class="v-inv">
+            <div class="v-deal">
+              <div>
+                <div class="addr">1842 Edgewater Dr · Orlando FL</div>
+                <div class="sub">Absentee · 62% equity · $385K · GA owner</div>
+              </div>
+              <div class="score">A</div>
+            </div>
+            <div class="v-deal">
+              <div>
+                <div class="addr">724 Magnolia St · Tampa FL</div>
+                <div class="sub">Probate · 88% equity · vacant 120 days</div>
+              </div>
+              <div class="score">A</div>
+            </div>
+            <div class="v-deal warm">
+              <div>
+                <div class="addr">3155 SW 18th Ave · Miami FL</div>
+                <div class="sub">Pre-foreclosure · NOD filed Feb 2026</div>
+              </div>
+              <div class="score">B</div>
+            </div>
+            <div class="v-deal warm">
+              <div>
+                <div class="addr">918 Lakewood Ter · Jacksonville FL</div>
+                <div class="sub">Absentee + tax delinq · $4,280 owed</div>
+              </div>
+              <div class="score">B</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how" id="how">
+  <div class="section-inner">
+    <div class="section-header">
+      <div class="section-eyebrow">How It Works</div>
+      <h2 class="section-title">Plug it in. <span class="cyan-text">Watch it run.</span></h2>
+      <p class="section-sub">No setup headaches. No agent training. Realtywize embeds into your existing site or comes with a new one — and starts working day one.</p>
+    </div>
+    <div class="how-grid">
+      <div class="how-step">
+        <div class="how-num">01</div>
+        <h4>Plug In</h4>
+        <p>We embed Realtywize into your existing site, or build you a new one with it baked in.</p>
+      </div>
+      <div class="how-step">
+        <div class="how-num">02</div>
+        <h4>Capture</h4>
+        <p>Inquiries flow in from forms, chat, valuations, and investor portals — 24/7.</p>
+      </div>
+      <div class="how-step">
+        <div class="how-num">03</div>
+        <h4>Score</h4>
+        <p>The AI classifies, summarizes, and recommends an action for every lead in seconds.</p>
+      </div>
+      <div class="how-step">
+        <div class="how-num">04</div>
+        <h4>Close</h4>
+        <p>Your team gets hot leads first, drafted replies ready, and no manual triage to slow them down.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing" id="pricing">
+  <div class="section-inner">
+    <div class="section-header">
+      <div class="section-eyebrow">Pricing</div>
+      <h2 class="section-title">One plan. <span class="cyan-text">Everything included.</span></h2>
+      <p class="section-sub">No tiers to decode. No setup fees. Every Realtywize tool, one founders price.</p>
+    </div>
+
+    <div class="single-price-wrap">
+      <div class="price-card featured single-price-card">
+        <div class="price-badge">Founders Pricing</div>
+        <div class="price-name">Realtywize</div>
+        <div class="price-amount"><sup>$</sup>399</div>
+        <div class="price-period">per month · no setup fee</div>
+        <div class="price-setup investor-setup">Founders rate — locked for life while subscribed</div>
+
+        <div class="spc-columns">
+          <ul class="price-list">
+            <li>AI Deal Finder — off-market intelligence</li>
+            <li>Natural-language deal search</li>
+            <li>AI opportunity scoring A&ndash;F</li>
+            <li>AI-drafted outreach (letter / text / email)</li>
+            <li>Lead scoring (Hot / Warm / Cold)</li>
+            <li>Home valuation widget</li>
+          </ul>
+          <ul class="price-list">
+            <li>Investor deal screener</li>
+            <li>Pipeline + follow-up automation</li>
+            <li>Review Generator (post-close SMS)</li>
+            <li>Missed call text-back</li>
+            <li>Live dashboard + reporting</li>
+            <li>Bring your own data provider</li>
+          </ul>
+        </div>
+
+        <a href="#contact" class="btn-price">Start Free Trial</a>
+        <div class="spc-trial-note">Free trial &middot; no card required to start &middot; cancel anytime</div>
+      </div>
+    </div>
+
+    <div class="brokerage-line">
+      <span class="bl-icon">&#127970;</span>
+      <span class="bl-text"><strong>Running a brokerage or team?</strong> Realtywize scales to multi-agent setups with role-based access and team dashboards. <a href="#contact" class="bl-link">Talk to us about team pricing &rarr;</a></span>
+    </div>
+
+    <div class="pricing-strategy">
+      <div class="ps-row">
+        <div class="ps-col">
+          <div class="ps-label">PROPERTY DATA</div>
+          <div class="ps-text"><strong>Bring your own (BYO).</strong> Realtywize plugs into BatchData, PropStream, REIPro, or any compatible feed &mdash; we're the AI workflow layer, not the data source.</div>
+        </div>
+        <div class="ps-col">
+          <div class="ps-label">NO SETUP FEES</div>
+          <div class="ps-text"><strong>Zero to start.</strong> We get you live &mdash; embed, training, data wiring &mdash; with no setup fee during the founders period.</div>
+        </div>
+        <div class="ps-col">
+          <div class="ps-label">FOUNDERS RATE</div>
+          <div class="ps-text"><strong>Locked for life.</strong> Lock in $399/mo now and it stays $399 for as long as you're subscribed &mdash; even when the price goes up for everyone else.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="cta-final" id="contact">
+  <div class="cta-inner">
+    <h2>Stop losing leads to <span class="cyan-text">faster competitors.</span></h2>
+    <p>Book a 20-minute demo. See Realtywize working on a real inquiry. Decide if it's right for your brokerage.</p>
+    <div class="hero-cta" style="justify-content: center; margin-bottom: 0;">
+      <a href="/app" class="btn-primary">Launch Live Demo →</a>
+      <a href="mailto:jabari@hgiasolutions.com" class="btn-secondary">Email Us</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <a href="#" class="logo">
+      <div class="logo-icon">
+        <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
+          <defs>
+            <linearGradient id="cyanGradFooter" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#4ee2ff"/>
+              <stop offset="100%" stop-color="#0099cc"/>
+            </linearGradient>
+          </defs>
+          <path d="M6 18 L20 6 L34 18 L34 35 L24 35 L24 24 L16 24 L16 35 L6 35 Z" stroke="url(#cyanGradFooter)" stroke-width="2.5" fill="none" stroke-linejoin="round"/>
+          <path d="M18 14 L24 14 L24 20 L18 20 Z M18 14 L18 22 M21 16 L24 16 M21 18 L24 18" stroke="url(#cyanGradFooter)" stroke-width="2" fill="none" stroke-linejoin="round" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="logo-text" style="font-size: 1.2rem;">REALTY<span>WIZE</span></div>
+    </a>
+    <div class="footer-links">
+      <a href="#features">Features</a>
+      <a href="#pricing">Pricing</a>
+      <a href="/app">Demo</a>
+      <a href="mailto:jabari@hgiasolutions.com">Contact</a>
+    </div>
+    <div class="footer-meta">A product of HGIA Solutions · Charlotte, NC</div>
+  </div>
+</footer>
+
+<script>
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) entry.target.classList.add('visible');
+    });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.section-header, .feature-card, .tool-row, .how-step, .price-card').forEach(el => {
+    el.classList.add('fade-in');
+    observer.observe(el);
+  });
+</script>
+
+</body>
+</html>
