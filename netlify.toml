@@ -2,6 +2,7 @@
 
 [build]
   publish = "."
+  functions = "netlify/functions"
 
 # Pretty URLs: /app serves app/index.html automatically.
 # Explicit redirect kept for clarity and to handle /app/ too.
