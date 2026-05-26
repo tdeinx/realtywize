@@ -2237,10 +2237,16 @@
       throw new Error("API Error (" + response.status + "): " + detail);
     }
     const data = await response.json();
-    return data.content
-      .filter(block => block.type === "text")
-      .map(block => block.text)
-      .join("\n");
+    if (typeof data.text === "string") {
+      return data.text;
+    }
+    if (Array.isArray(data.content)) {
+      return data.content
+        .filter(block => block.type === "text")
+        .map(block => block.text)
+        .join("\n");
+    }
+    throw new Error("Unexpected response shape from /.netlify/functions/claude: " + JSON.stringify(data).slice(0, 200));
   }
 
   function parseJSON(text) {
@@ -2756,8 +2762,9 @@ Return ONLY the JSON. No prose. No backticks.`;
     const toScore = dfState.visible.filter(p => !dfState.scores[p.id]);
     if (toScore.length === 0) { renderResults(); return; }
 
-    const CONCURRENCY = 4;
+    const CONCURRENCY = 3;
     let idx = 0;
+    let failures = 0;
     async function worker() {
       while (idx < toScore.length) {
         const p = toScore[idx++];
@@ -2765,10 +2772,16 @@ Return ONLY the JSON. No prose. No backticks.`;
           const sc = await scoreOneProperty(p);
           dfState.scores[p.id] = sc;
           renderResults();
-        } catch (e) { /* skip on error */ }
+        } catch (e) {
+          failures++;
+          console.error("Deal Finder scoring failed", { id: p.id, address: p.address, error: e && e.message ? e.message : String(e) });
+        }
       }
     }
     await Promise.all(Array.from({length: CONCURRENCY}, worker));
+    if (failures > 0) {
+      console.warn("Deal Finder scoring summary: " + failures + " of " + toScore.length + " properties failed to score.");
+    }
   }
 
   async function scoreOneProperty(p) {
@@ -2794,7 +2807,7 @@ Grade A through F:
 
 Return ONLY a JSON object: {"grade":"A","reason":"one short sentence","play":"one short suggested approach"}. No prose. No backticks.`;
 
-    const text = await callClaude(prompt, 250);
+    const text = await callClaude(prompt, 600);
     const parsed = parseJSON(text);
     const gradeNum = { A:5, B:4, C:3, D:2, F:1 }[parsed.grade] || 0;
     return { grade: parsed.grade, scoreNum: gradeNum, reason: parsed.reason, play: parsed.play };
