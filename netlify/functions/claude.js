@@ -22,11 +22,11 @@ exports.handler = async (event) => {
     return json(405, { error: "Method not allowed. Use POST." });
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = event.headers["x-api-key"] || process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     return json(500, {
       error:
-        "Server is missing ANTHROPIC_API_KEY. Set it in Netlify → Site configuration → Environment variables.",
+        "Server is missing ANTHROPIC_API_KEY. Set it in Netlify → Site configuration → Environment variables, or provide one in Settings.",
     });
   }
 
