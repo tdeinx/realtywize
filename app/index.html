@@ -1604,6 +1604,7 @@
     font-size: 1.1rem;
   }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -2264,6 +2265,8 @@
 
             <button class="btn-analyze" onclick="updateSettings()">Save Settings</button>
 
+            <button class="view-all-btn" style="margin-top: 1rem;" onclick="handleLogout()">Logout</button>
+
             <div style="margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border);">
               <div class="card-label" style="color: var(--hot);">Danger Zone</div>
               <p style="font-size: 0.85rem; color: var(--text-mid); margin-bottom: 1rem;">Resetting will clear all your saved leads and tasks from this browser.</p>
@@ -2275,6 +2278,83 @@
 
     </div>
   </main>
+
+  <!-- Modal: Onboarding -->
+  <div class="modal-backdrop" id="modal-onboarding" style="z-index: 300;">
+    <div class="modal" style="width: min(600px, 90vw);">
+      <div id="ob-step-1">
+        <div class="modal-h">
+          <h3>Welcome to Realtywize!</h3>
+        </div>
+        <p style="margin-bottom: 1.5rem; color: var(--text-mid);">Let's get your command center ready. First, what's your primary focus?</p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem;">
+          <button class="ai-chip" style="justify-content: center; height: 100px; flex-direction: column;" onclick="nextObStep(2, 'Listing Agent')">
+            <span style="font-size: 1.5rem; margin-bottom: 0.5rem;">🏠</span>
+            Listing Agent
+          </button>
+          <button class="ai-chip" style="justify-content: center; height: 100px; flex-direction: column;" onclick="nextObStep(2, 'Buyer Agent')">
+            <span style="font-size: 1.5rem; margin-bottom: 0.5rem;">🔑</span>
+            Buyer Agent
+          </button>
+          <button class="ai-chip" style="justify-content: center; height: 100px; flex-direction: column;" onclick="nextObStep(2, 'Investor')">
+            <span style="font-size: 1.5rem; margin-bottom: 0.5rem;">📊</span>
+            Investor
+          </button>
+          <button class="ai-chip" style="justify-content: center; height: 100px; flex-direction: column;" onclick="nextObStep(2, 'Broker')">
+            <span style="font-size: 1.5rem; margin-bottom: 0.5rem;">🏢</span>
+            Broker
+          </button>
+        </div>
+      </div>
+      <div id="ob-step-2" style="display: none;">
+        <div class="modal-h">
+          <h3>Almost there...</h3>
+        </div>
+        <p style="margin-bottom: 1.5rem; color: var(--text-mid);">One last thing: Do you have an Anthropic API key? (Optional)</p>
+        <label>Anthropic API Key</label>
+        <input type="password" id="ob-apikey" placeholder="sk-ant-...">
+        <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: -0.5rem; margin-bottom: 1.5rem;">
+          We use Claude for lead scoring and valuations. You can add your own key for higher limits, or use our shared key for now.
+        </p>
+        <button class="btn-analyze" onclick="completeOnboarding()">Finish Setup →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Auth -->
+  <div class="modal-backdrop active" id="modal-auth" style="z-index: 300;">
+    <div class="modal">
+      <div id="auth-login">
+        <div class="modal-h">
+          <h3>Welcome Back</h3>
+        </div>
+        <label>Email</label>
+        <input type="text" id="login-email" placeholder="you@example.com">
+        <label>Password</label>
+        <input type="password" id="login-password" placeholder="••••••••" style="width: 100%; padding: 0.8rem 1rem; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 8px; color: var(--white); margin-bottom: 1rem;">
+        <button class="btn-analyze" onclick="handleLogin()" id="login-btn">Login</button>
+        <p style="text-align: center; font-size: 0.85rem; margin-top: 1rem; color: var(--text-mid);">
+          Don't have an account? <a href="#" onclick="showAuth('signup')" style="color: var(--cyan);">Sign up</a>
+        </p>
+      </div>
+      <div id="auth-signup" style="display: none;">
+        <div class="modal-h">
+          <h3>Create Account</h3>
+        </div>
+        <label>Full Name</label>
+        <input type="text" id="signup-name" placeholder="Alex Johnson">
+        <label>Email</label>
+        <input type="text" id="signup-email" placeholder="you@example.com">
+        <label>Password</label>
+        <input type="password" id="signup-password" placeholder="••••••••" style="width: 100%; padding: 0.8rem 1rem; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 8px; color: var(--white); margin-bottom: 1rem;">
+        <button class="btn-analyze" onclick="handleSignup()" id="signup-btn">Sign Up</button>
+        <p style="text-align: center; font-size: 0.85rem; margin-top: 1rem; color: var(--text-mid);">
+          Already have an account? <a href="#" onclick="showAuth('login')" style="color: var(--cyan);">Login</a>
+        </p>
+      </div>
+      <div id="auth-error" class="error" style="display: none; margin-top: 1rem;"></div>
+    </div>
+  </div>
 
   <!-- Modal: Add Lead -->
   <div class="modal-backdrop" id="modal-add-lead">
@@ -2306,24 +2386,27 @@
 </div>
 
 <script>
+  // ============ SUPABASE CONFIG ============
+  // These should be set in your environment
+  const SUPABASE_URL = "";
+  const SUPABASE_ANON_KEY = "";
+
+  let supabase = null;
+  if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  }
+
   // ============ DATA MANAGEMENT ============
   const RW_STORAGE_KEY = 'realtywize_data_v1';
 
   let rwData = {
-    leads: [
-      { id: 1, name: 'Jessica Moore', email: 'jessica@example.com', phone: '555-0101', source: 'Facebook Ads', message: 'Hi! I am interested in 123 Main St...', score: 'HOT', type: 'Buyer', urgency: 'This weekend', created: new Date(Date.now() - 120000).toISOString() },
-      { id: 2, name: 'Michael Smith', email: 'michael@example.com', phone: '555-0102', source: 'Google Ads', message: 'Do you have anything in the 28207...', score: 'WARM', type: 'Buyer', urgency: '6-12 months', created: new Date(Date.now() - 300000).toISOString() }
-    ],
-    tasks: [
-      { id: 1, text: 'Follow up with John D.', done: false, created: new Date(new Date().setHours(9,0,0)).toISOString() },
-      { id: 2, text: 'Call new lead: Sarah M.', done: false, created: new Date(new Date().setHours(10,30,0)).toISOString() },
-      { id: 3, text: 'Listing appointment', done: false, created: new Date(new Date().setHours(12,0,0)).toISOString() },
-      { id: 4, text: 'Send market report', done: false, created: new Date(new Date().setHours(14,0,0)).toISOString() }
-    ],
+    leads: [],
+    tasks: [],
     user: {
-      name: 'Alex Johnson',
-      role: 'Top Producer',
-      avatar: 'AJ'
+      id: null,
+      name: 'Guest',
+      role: 'Agent',
+      avatar: 'G'
     },
     settings: {
       apiKey: ''
@@ -2354,9 +2437,176 @@
   }
 
   // Initial load
-  loadData();
-  updateDashboardKPIs();
-  renderTasks();
+  // loadData(); // Replacing with Supabase session check
+  checkSession();
+
+  async function checkSession() {
+    if (!supabase) {
+      console.warn("Supabase not configured. Using demo mode.");
+      loadData();
+      updateDashboardKPIs();
+      renderTasks();
+      return;
+    }
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      onAuthenticated(session.user);
+    } else {
+      openModal('modal-auth');
+    }
+
+    supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        onAuthenticated(session.user);
+      } else if (event === 'SIGNED_OUT') {
+        location.reload();
+      }
+    });
+  }
+
+  async function onAuthenticated(user) {
+    closeModal('modal-auth');
+    rwData.user.id = user.id;
+
+    // Fetch profile
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+
+    if (profile) {
+      rwData.user.name = profile.display_name || user.email;
+      rwData.user.role = profile.role || 'Agent';
+      rwData.user.avatar = profile.avatar_initials || rwData.user.name.slice(0,2).toUpperCase();
+
+      if (!profile.onboarding_completed) {
+        openModal('modal-onboarding');
+      }
+    }
+
+    // Fetch user specific data
+    await syncFromSupabase();
+
+    updateUserUI();
+    updateDashboardKPIs();
+    renderTasks();
+  }
+
+  async function syncFromSupabase() {
+    if (!supabase) return;
+
+    const [leadsRes, tasksRes] = await Promise.all([
+      supabase.from('leads').select('*').order('created_at', { ascending: false }),
+      supabase.from('tasks').select('*').order('created_at', { ascending: false })
+    ]);
+
+    if (leadsRes.data) {
+      rwData.leads = leadsRes.data.map(l => ({
+        ...l,
+        created: l.created_at,
+        score: l.status.toUpperCase() // Mapping status to score for now
+      }));
+    }
+
+    if (tasksRes.data) {
+      rwData.tasks = tasksRes.data.map(t => ({
+        ...t,
+        done: t.completed,
+        created: t.created_at
+      }));
+    }
+  }
+
+  function showAuth(mode) {
+    document.getElementById('auth-login').style.display = mode === 'login' ? 'block' : 'none';
+    document.getElementById('auth-signup').style.display = mode === 'signup' ? 'block' : 'none';
+    document.getElementById('auth-error').style.display = 'none';
+  }
+
+  async function handleLogin() {
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+    const btn = document.getElementById('login-btn');
+    const errBox = document.getElementById('auth-error');
+
+    if (!supabase) { alert("Supabase not configured."); return; }
+
+    btn.disabled = true;
+    btn.textContent = "Logging in...";
+    errBox.style.display = 'none';
+
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      errBox.textContent = error.message;
+      errBox.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = "Login";
+    }
+  }
+
+  async function handleSignup() {
+    const email = document.getElementById('signup-email').value;
+    const password = document.getElementById('signup-password').value;
+    const name = document.getElementById('signup-name').value;
+    const btn = document.getElementById('signup-btn');
+    const errBox = document.getElementById('auth-error');
+
+    if (!supabase) { alert("Supabase not configured."); return; }
+
+    btn.disabled = true;
+    btn.textContent = "Creating account...";
+    errBox.style.display = 'none';
+
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          display_name: name,
+          avatar_initials: name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+        }
+      }
+    });
+
+    if (error) {
+      errBox.textContent = error.message;
+      errBox.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = "Sign Up";
+    } else {
+      alert("Check your email for confirmation!");
+    }
+  }
+
+  async function handleLogout() {
+    if (supabase) await supabase.auth.signOut();
+    location.reload();
+  }
+
+  function nextObStep(step, role) {
+    if (role) rwData.user.role = role;
+    document.getElementById('ob-step-1').style.display = step === 1 ? 'block' : 'none';
+    document.getElementById('ob-step-2').style.display = step === 2 ? 'block' : 'none';
+  }
+
+  async function completeOnboarding() {
+    const apiKey = document.getElementById('ob-apikey').value.trim();
+    if (apiKey) rwData.settings.apiKey = apiKey;
+
+    if (supabase && rwData.user.id) {
+      await supabase.from('profiles').update({
+        role: rwData.user.role,
+        onboarding_completed: true
+      }).eq('id', rwData.user.id);
+    }
+
+    closeModal('modal-onboarding');
+    saveData();
+    updateUserUI();
+    alert("Onboarding complete! Enjoy Realtywize.");
+  }
 
   // ============ SIDEBAR NAVIGATION ============
   const viewTitles = {
@@ -2555,6 +2805,19 @@ SOURCE: ${source}
       }
     }
 
+    if (supabase && rwData.user.id) {
+      await supabase.from('leads').insert({
+        user_id: rwData.user.id,
+        name: newLead.name,
+        email: newLead.email,
+        phone: newLead.phone,
+        status: newLead.score,
+        score: 0, // Could be numeric score if parsed
+        score_reason: newLead.urgency,
+        source: newLead.source
+      });
+    }
+
     rwData.leads.unshift(newLead);
     saveData();
     renderLeads();
@@ -2590,27 +2853,42 @@ SOURCE: ${source}
     if (dashList) dashList.innerHTML = taskHtml;
   }
 
-  function addNewTask() {
+  async function addNewTask() {
     const input = document.getElementById('new-task-text');
     const text = input.value.trim();
     if (!text) return;
 
-    rwData.tasks.unshift({
+    const newTask = {
       id: Date.now(),
       text,
       done: false,
       created: new Date().toISOString()
-    });
+    };
 
+    if (supabase && rwData.user.id) {
+      await supabase.from('tasks').insert({
+        user_id: rwData.user.id,
+        text: newTask.text,
+        completed: newTask.done
+      });
+    }
+
+    rwData.tasks.unshift(newTask);
     saveData();
     renderTasks();
     input.value = '';
   }
 
-  function toggleTask(id) {
+  async function toggleTask(id) {
     const task = rwData.tasks.find(t => t.id === id);
     if (task) {
       task.done = !task.done;
+
+      if (supabase && rwData.user.id && typeof id === 'string') {
+        // id is a string (uuid from supabase)
+        await supabase.from('tasks').update({ completed: task.done }).eq('id', id);
+      }
+
       saveData();
       renderTasks();
     }
@@ -2666,11 +2944,19 @@ SOURCE: ${source}
     document.getElementById('set-apikey').value = rwData.settings.apiKey || '';
   }
 
-  function updateSettings() {
+  async function updateSettings() {
     rwData.user.name = document.getElementById('set-name').value.trim();
     rwData.user.role = document.getElementById('set-role').value.trim();
     rwData.user.avatar = document.getElementById('set-avatar').value.trim().toUpperCase();
     rwData.settings.apiKey = document.getElementById('set-apikey').value.trim();
+
+    if (supabase && rwData.user.id) {
+      await supabase.from('profiles').update({
+        display_name: rwData.user.name,
+        role: rwData.user.role,
+        avatar_initials: rwData.user.avatar
+      }).eq('id', rwData.user.id);
+    }
 
     saveData();
     updateUserUI();
