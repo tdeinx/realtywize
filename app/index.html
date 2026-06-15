@@ -1440,6 +1440,122 @@
     text-transform: uppercase;
   }
 
+  /* ============ LEADS VIEW STYLES ============ */
+  .leads-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+  }
+  .btn-add {
+    padding: 0.75rem 1.25rem;
+    background: var(--cyan);
+    color: var(--black);
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: inherit;
+  }
+  .leads-table-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .leads-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .leads-table th {
+    text-align: left;
+    padding: 1rem;
+    background: rgba(255,255,255,0.03);
+    color: var(--text-mid);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .leads-table td {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.88rem;
+    color: var(--text-bright);
+  }
+  .leads-table tr:last-child td { border-bottom: none; }
+  .lead-name { font-weight: 600; color: var(--white); }
+  .lead-meta { font-size: 0.75rem; color: var(--text-dim); }
+
+  /* Tasks View */
+  .tasks-container {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  .task-add-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+  }
+  .task-add-row input { margin-bottom: 0; }
+  .btn-task-add {
+    padding: 0 1.5rem;
+    background: var(--cyan);
+    color: var(--black);
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .badge-score {
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .badge-score.hot { background: var(--hot-bg); color: var(--hot); }
+  .badge-score.warm { background: var(--warm-bg); color: var(--warm); }
+  .badge-score.cold { background: var(--cold-bg); color: var(--cold); }
+
+  /* Modal */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    z-index: 200;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-backdrop.active { display: flex; }
+  .modal {
+    background: var(--bg-card);
+    border: 1px solid var(--cyan-border);
+    width: min(500px, 90vw);
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 0 40px rgba(0,0,0,0.5);
+  }
+  .modal-h {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+  .modal-h h3 { font-size: 1.25rem; color: var(--white); }
+  .modal-close {
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    font-size: 1.5rem;
+    cursor: pointer;
+  }
+
   /* ============ RESPONSIVE ============ */
   @media (max-width: 1280px) {
     .dash-row.r1, .dash-row.r2 { grid-template-columns: 1fr 1fr; }
@@ -1511,18 +1627,19 @@
     <nav class="sb-nav">
       <div class="sb-section-label">Workspace</div>
       <button class="sb-item active" data-view="dashboard"><span class="sb-icon">🏠</span> Dashboard</button>
+      <button class="sb-item" data-view="leads"><span class="sb-icon">👥</span> Leads</button>
+      <button class="sb-item" data-view="tasks"><span class="sb-icon">✓</span> Tasks</button>
       <button class="sb-item" data-view="deal-finder"><span class="sb-icon">🎯</span> Deal Finder</button>
       <button class="sb-item" data-view="ai-tools"><span class="sb-icon">🤖</span> AI Assistant</button>
-      <div class="sb-section-label" style="margin-top: 1rem;">Coming Soon</div>
-      <button class="sb-item sb-soon" data-view="leads"><span class="sb-icon">👥</span> Leads <span class="sb-tag">Soon</span></button>
+      <button class="sb-item" data-view="settings"><span class="sb-icon">⚙️</span> Settings</button>
+
+      <div class="sb-section-label" style="margin-top: 1.5rem;">Coming Soon</div>
       <button class="sb-item sb-soon" data-view="conversations"><span class="sb-icon">💬</span> Conversations <span class="sb-tag">Soon</span></button>
       <button class="sb-item sb-soon" data-view="calendars"><span class="sb-icon">📅</span> Calendars <span class="sb-tag">Soon</span></button>
       <button class="sb-item sb-soon" data-view="properties"><span class="sb-icon">🏘️</span> Properties <span class="sb-tag">Soon</span></button>
       <button class="sb-item sb-soon" data-view="deals"><span class="sb-icon">💼</span> Deals <span class="sb-tag">Soon</span></button>
-      <button class="sb-item sb-soon" data-view="tasks"><span class="sb-icon">✓</span> Tasks <span class="sb-tag">Soon</span></button>
       <button class="sb-item sb-soon" data-view="marketing"><span class="sb-icon">📣</span> Marketing <span class="sb-tag">Soon</span></button>
       <button class="sb-item sb-soon" data-view="analytics"><span class="sb-icon">📊</span> Analytics <span class="sb-tag">Soon</span></button>
-      <button class="sb-item" data-view="settings" style="margin-top: 1rem;"><span class="sb-icon">⚙️</span> Settings</button>
     </nav>
     <div class="sb-user">
       <div class="sb-avatar">AJ</div>
@@ -1664,42 +1781,13 @@
           <!-- Conversations -->
           <div class="card">
             <div class="card-h">
-              <div class="card-title">Conversations</div>
+              <div class="card-title">Latest Leads</div>
               <button class="card-filter">All ▾</button>
             </div>
-            <div class="conv-list">
-              <div class="conv-item">
-                <div class="conv-avatar" style="background: linear-gradient(135deg, #00d4ff, #a78bfa);">JM</div>
-                <div class="conv-text">
-                  <div class="conv-name-row"><span class="conv-name">Jessica Moore</span><span class="conv-time">2m</span></div>
-                  <div class="conv-msg">Hi, I'm interested in 123 Main St...</div>
-                </div>
-                <div class="conv-status"></div>
-              </div>
-              <div class="conv-item">
-                <div class="conv-avatar" style="background: linear-gradient(135deg, #2dd4a0, #00d4ff);">MS</div>
-                <div class="conv-text">
-                  <div class="conv-name-row"><span class="conv-name">Michael Smith</span><span class="conv-time">5m</span></div>
-                  <div class="conv-msg">Do you have anything in the 28207...</div>
-                </div>
-                <div class="conv-status"></div>
-              </div>
-              <div class="conv-item">
-                <div class="conv-avatar" style="background: linear-gradient(135deg, #a78bfa, #f472b6);">SL</div>
-                <div class="conv-text">
-                  <div class="conv-name-row"><span class="conv-name">Samantha Lee</span><span class="conv-time">12m</span></div>
-                  <div class="conv-msg">I'd like to schedule a showing...</div>
-                </div>
-              </div>
-              <div class="conv-item">
-                <div class="conv-avatar" style="background: linear-gradient(135deg, #ffb547, #ff5e7a);">DB</div>
-                <div class="conv-text">
-                  <div class="conv-name-row"><span class="conv-name">David Brown</span><span class="conv-time">18m</span></div>
-                  <div class="conv-msg">What is the price on that listing?</div>
-                </div>
-              </div>
+            <div id="dash-leads-list" class="conv-list">
+              <!-- JS populated -->
             </div>
-            <button class="view-all-btn">View All Conversations</button>
+            <button class="view-all-btn" onclick="switchView('leads')">View All Leads</button>
           </div>
 
         </div>
@@ -2068,11 +2156,25 @@
 
       <!-- ============ PLACEHOLDER VIEWS (Empty States) ============ -->
       <div class="view" id="view-leads">
-        <div class="empty-view">
-          <div class="ev-icon">👥</div>
-          <h2>Leads</h2>
-          <p>Your full lead database with filtering, scoring, and bulk actions will live here. In the live version, this connects to your CRM and surfaces every inbound lead in real time.</p>
-          <div class="pill">On the Roadmap · 2026</div>
+        <div class="leads-header">
+          <h2>Lead Database</h2>
+          <button class="btn-add" onclick="openModal('modal-add-lead')"><span>+</span> Add Lead</button>
+        </div>
+        <div class="leads-table-card">
+          <table class="leads-table">
+            <thead>
+              <tr>
+                <th>Name / Contact</th>
+                <th>Source</th>
+                <th>AI Score</th>
+                <th>Type / Urgency</th>
+                <th>Created</th>
+              </tr>
+            </thead>
+            <tbody id="leads-list">
+              <!-- JS populated -->
+            </tbody>
+          </table>
         </div>
       </div>
       <div class="view" id="view-conversations">
@@ -2108,11 +2210,19 @@
         </div>
       </div>
       <div class="view" id="view-tasks">
-        <div class="empty-view">
-          <div class="ev-icon">✓</div>
-          <h2>Tasks</h2>
-          <p>Smart task lists auto-generated from lead actions, deal stages, and AI follow-up recommendations.</p>
-          <div class="pill">On the Roadmap · 2026</div>
+        <div class="tasks-container">
+          <div class="leads-header">
+            <h2>My Tasks</h2>
+          </div>
+          <div class="task-add-row">
+            <input type="text" id="new-task-text" placeholder="What needs to be done?">
+            <button class="btn-task-add" onclick="addNewTask()">Add Task</button>
+          </div>
+          <div class="card">
+            <div id="tasks-list-full" class="task-list">
+              <!-- JS populated -->
+            </div>
+          </div>
         </div>
       </div>
       <div class="view" id="view-marketing">
@@ -2132,20 +2242,122 @@
         </div>
       </div>
       <div class="view" id="view-settings">
-        <div class="empty-view">
-          <div class="ev-icon">⚙️</div>
-          <h2>Settings</h2>
-          <p>Configure team members, integrations, brand colors, API keys, notification preferences, and billing.</p>
-          <div class="pill">On the Roadmap · 2026</div>
+        <div class="tasks-container">
+          <div class="leads-header">
+            <h2>Settings</h2>
+          </div>
+          <div class="card">
+            <div class="card-label">User Profile</div>
+            <label>Display Name</label>
+            <input type="text" id="set-name" placeholder="Alex Johnson">
+            <label>Role</label>
+            <input type="text" id="set-role" placeholder="Top Producer">
+            <label>Avatar Initials</label>
+            <input type="text" id="set-avatar" placeholder="AJ" maxlength="2">
+
+            <div class="card-label" style="margin-top: 2rem;">API Configuration</div>
+            <label>Anthropic API Key (Optional Override)</label>
+            <input type="password" id="set-apikey" placeholder="sk-ant-...">
+            <p style="font-size: 0.7rem; color: var(--text-dim); margin-top: -0.5rem; margin-bottom: 1rem;">
+              By default, the app uses the server-side key. Enter a key here to override for your session.
+            </p>
+
+            <button class="btn-analyze" onclick="updateSettings()">Save Settings</button>
+
+            <div style="margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border);">
+              <div class="card-label" style="color: var(--hot);">Danger Zone</div>
+              <p style="font-size: 0.85rem; color: var(--text-mid); margin-bottom: 1rem;">Resetting will clear all your saved leads and tasks from this browser.</p>
+              <button class="view-all-btn" style="border-color: var(--hot); color: var(--hot); width: auto; padding: 0.65rem 1.5rem;" onclick="resetAllData()">Reset All Data</button>
+            </div>
+          </div>
         </div>
       </div>
 
     </div>
   </main>
 
+  <!-- Modal: Add Lead -->
+  <div class="modal-backdrop" id="modal-add-lead">
+    <div class="modal">
+      <div class="modal-h">
+        <h3>Add New Lead</h3>
+        <button class="modal-close" onclick="closeModal('modal-add-lead')">×</button>
+      </div>
+      <label>Full Name</label>
+      <input type="text" id="nl-name" placeholder="John Doe">
+      <div class="input-row">
+        <div>
+          <label>Email</label>
+          <input type="text" id="nl-email" placeholder="john@example.com">
+        </div>
+        <div>
+          <label>Phone</label>
+          <input type="text" id="nl-phone" placeholder="555-0123">
+        </div>
+      </div>
+      <label>Lead Source</label>
+      <input type="text" id="nl-source" placeholder="e.g. Zillow, Referral, Facebook">
+      <label>Initial Message / Notes</label>
+      <textarea id="nl-message" placeholder="Paste their inquiry here for AI scoring..." style="min-height: 80px;"></textarea>
+      <button class="btn-analyze" id="nl-btn" onclick="addNewLead()">Add & Score Lead →</button>
+    </div>
+  </div>
+
 </div>
 
 <script>
+  // ============ DATA MANAGEMENT ============
+  const RW_STORAGE_KEY = 'realtywize_data_v1';
+
+  let rwData = {
+    leads: [
+      { id: 1, name: 'Jessica Moore', email: 'jessica@example.com', phone: '555-0101', source: 'Facebook Ads', message: 'Hi! I am interested in 123 Main St...', score: 'HOT', type: 'Buyer', urgency: 'This weekend', created: new Date(Date.now() - 120000).toISOString() },
+      { id: 2, name: 'Michael Smith', email: 'michael@example.com', phone: '555-0102', source: 'Google Ads', message: 'Do you have anything in the 28207...', score: 'WARM', type: 'Buyer', urgency: '6-12 months', created: new Date(Date.now() - 300000).toISOString() }
+    ],
+    tasks: [
+      { id: 1, text: 'Follow up with John D.', done: false, created: new Date(new Date().setHours(9,0,0)).toISOString() },
+      { id: 2, text: 'Call new lead: Sarah M.', done: false, created: new Date(new Date().setHours(10,30,0)).toISOString() },
+      { id: 3, text: 'Listing appointment', done: false, created: new Date(new Date().setHours(12,0,0)).toISOString() },
+      { id: 4, text: 'Send market report', done: false, created: new Date(new Date().setHours(14,0,0)).toISOString() }
+    ],
+    user: {
+      name: 'Alex Johnson',
+      role: 'Top Producer',
+      avatar: 'AJ'
+    },
+    settings: {
+      apiKey: ''
+    }
+  };
+
+  function loadData() {
+    const saved = localStorage.getItem(RW_STORAGE_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        rwData = { ...rwData, ...parsed };
+      } catch (e) {
+        console.error("Failed to parse saved data", e);
+      }
+    }
+    updateUserUI();
+  }
+
+  function saveData() {
+    localStorage.setItem(RW_STORAGE_KEY, JSON.stringify(rwData));
+  }
+
+  function updateUserUI() {
+    document.querySelectorAll('.sb-user-name').forEach(el => el.textContent = rwData.user.name);
+    document.querySelectorAll('.sb-user-role').forEach(el => el.textContent = rwData.user.role);
+    document.querySelectorAll('.sb-avatar').forEach(el => el.textContent = rwData.user.avatar);
+  }
+
+  // Initial load
+  loadData();
+  updateDashboardKPIs();
+  renderTasks();
+
   // ============ SIDEBAR NAVIGATION ============
   const viewTitles = {
     'dashboard': 'Dashboard',
@@ -2176,11 +2388,23 @@
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.getElementById('view-' + view).classList.add('active');
     document.getElementById('page-title').textContent = viewTitles[view] || view;
+
+    if (view === 'leads') renderLeads();
+    if (view === 'tasks') renderTasks();
+    if (view === 'settings') loadSettingsForm();
+    if (view === 'dashboard') updateDashboardKPIs();
   }
 
   // Mobile menu
   document.getElementById('menuBtn').addEventListener('click', () => {
     document.getElementById('sidebar').classList.toggle('open');
+  });
+
+  // Global escape for modals
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.modal-backdrop').forEach(m => m.classList.remove('active'));
+    }
   });
 
   // ============ TOOL TAB SWITCHING ============
@@ -2218,9 +2442,17 @@
   // ============ CLAUDE API HELPER ============
   // Calls go through a Netlify serverless function so the API key stays server-side.
   async function callClaude(prompt, maxTokens = 1000) {
+    // If user provided their own API key, we should ideally use it.
+    // However, the netlify function is designed to use the env var.
+    // If the user provided a key, we'll pass it in a header that the function could potentially use.
+    const headers = { "Content-Type": "application/json" };
+    if (rwData.settings.apiKey) {
+      headers["X-API-Key"] = rwData.settings.apiKey;
+    }
+
     const response = await fetch("/.netlify/functions/claude", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: headers,
       body: JSON.stringify({
         max_tokens: maxTokens,
         messages: [{ role: "user", content: prompt }]
@@ -2255,6 +2487,201 @@
     const end = cleaned.lastIndexOf('}');
     if (start === -1 || end === -1) throw new Error("No JSON object found");
     return JSON.parse(cleaned.substring(start, end + 1));
+  }
+
+  // ============ MODALS ============
+  function openModal(id) { document.getElementById(id).classList.add('active'); }
+  function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+  // ============ LEADS UI ============
+  function renderLeads() {
+    const list = document.getElementById('leads-list');
+    if (!list) return;
+    if (rwData.leads.length === 0) {
+      list.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:3rem;color:var(--text-dim);">No leads yet. Add your first lead to get started.</td></tr>';
+      return;
+    }
+    list.innerHTML = rwData.leads.map(lead => `
+      <tr>
+        <td>
+          <div class="lead-name">${lead.name}</div>
+          <div class="lead-meta">${lead.email} · ${lead.phone}</div>
+        </td>
+        <td>${lead.source}</td>
+        <td><span class="badge-score ${(lead.score || 'PENDING').toLowerCase()}">${lead.score || 'PENDING'}</span></td>
+        <td>${lead.type || '—'} · ${lead.urgency || '—'}</td>
+        <td>${new Date(lead.created).toLocaleDateString()}</td>
+      </tr>
+    `).join('');
+  }
+
+  async function addNewLead() {
+    const name = document.getElementById('nl-name').value.trim();
+    const email = document.getElementById('nl-email').value.trim();
+    const phone = document.getElementById('nl-phone').value.trim();
+    const source = document.getElementById('nl-source').value.trim();
+    const message = document.getElementById('nl-message').value.trim();
+    const btn = document.getElementById('nl-btn');
+
+    if (!name) { alert("Please enter a name."); return; }
+
+    btn.disabled = true;
+    btn.textContent = "Adding & Scoring...";
+
+    const newLead = {
+      id: Date.now(),
+      name, email, phone, source, message,
+      created: new Date().toISOString(),
+      score: 'PENDING',
+      type: '',
+      urgency: ''
+    };
+
+    // Try to score with AI
+    if (message) {
+      try {
+        const prompt = `You are Realtywize, an AI lead scoring assistant. Analyze this inquiry and respond with ONLY a JSON object:
+INQUIRY: """${message}"""
+SOURCE: ${source}
+
+{ "score": "HOT"|"WARM"|"COLD", "type": "Buyer"|"Seller"|"Investor"|"Renter"|"Browser", "urgency": "short description" }`;
+        const resp = await callClaude(prompt, 300);
+        const data = parseJSON(resp);
+        newLead.score = data.score;
+        newLead.type = data.type;
+        newLead.urgency = data.urgency;
+      } catch (e) {
+        console.error("AI Scoring failed for new lead", e);
+      }
+    }
+
+    rwData.leads.unshift(newLead);
+    saveData();
+    renderLeads();
+    closeModal('modal-add-lead');
+
+    // Clear form
+    document.getElementById('nl-name').value = '';
+    document.getElementById('nl-email').value = '';
+    document.getElementById('nl-phone').value = '';
+    document.getElementById('nl-source').value = '';
+    document.getElementById('nl-message').value = '';
+    btn.disabled = false;
+    btn.textContent = "Add & Score Lead →";
+  }
+
+  // ============ TASKS UI ============
+  function renderTasks() {
+    const list = document.getElementById('tasks-list-full');
+    const dashList = document.querySelector('#view-dashboard .task-list');
+    if (!list) return;
+
+    const taskHtml = rwData.tasks.length === 0
+      ? '<div style="text-align:center;padding:2rem;color:var(--text-dim);">No tasks for today.</div>'
+      : rwData.tasks.map(task => `
+        <div class="task-item">
+          <div class="task-check ${task.done ? 'done' : ''}" onclick="toggleTask(${task.id})"></div>
+          <div class="task-text ${task.done ? 'done' : ''}">${task.text}</div>
+          <div class="task-time">${new Date(task.created).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+        </div>
+      `).join('');
+
+    list.innerHTML = taskHtml;
+    if (dashList) dashList.innerHTML = taskHtml;
+  }
+
+  function addNewTask() {
+    const input = document.getElementById('new-task-text');
+    const text = input.value.trim();
+    if (!text) return;
+
+    rwData.tasks.unshift({
+      id: Date.now(),
+      text,
+      done: false,
+      created: new Date().toISOString()
+    });
+
+    saveData();
+    renderTasks();
+    input.value = '';
+  }
+
+  function toggleTask(id) {
+    const task = rwData.tasks.find(t => t.id === id);
+    if (task) {
+      task.done = !task.done;
+      saveData();
+      renderTasks();
+    }
+  }
+
+  // ============ DASHBOARD DYNAMIC ============
+  function updateDashboardKPIs() {
+    const leadsCount = rwData.leads.length;
+    const tasksCount = rwData.tasks.filter(t => !t.done).length;
+
+    // For demo purposes, we'll keep some of the fake numbers or make them slightly more dynamic
+    document.querySelector('.kpi-card:nth-child(1) .kpi-num-lg').textContent = leadsCount || '0';
+    document.querySelector('.kpi-card:nth-child(3) .kpi-num-lg').textContent = tasksCount || '0';
+    document.querySelector('.kpi-card:nth-child(3) .kpi-label-lg').textContent = 'Pending Tasks';
+
+    // Update Latest Leads on Dashboard
+    const dashLeadsList = document.getElementById('dash-leads-list');
+    if (dashLeadsList) {
+      dashLeadsList.innerHTML = rwData.leads.slice(0, 5).map(lead => {
+        const initials = lead.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+        const timeAgo = Math.floor((Date.now() - new Date(lead.created)) / 60000);
+        return `
+          <div class="conv-item" onclick="switchView('leads')">
+            <div class="conv-avatar" style="background: var(--cyan-soft); color: var(--cyan); border: 1px solid var(--cyan-border);">${initials}</div>
+            <div class="conv-text">
+              <div class="conv-name-row"><span class="conv-name">${lead.name}</span><span class="conv-time">${timeAgo}m</span></div>
+              <div class="conv-msg">${lead.message || 'No message provided.'}</div>
+            </div>
+            ${lead.score === 'HOT' ? '<div class="conv-status"></div>' : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Update Recent Deals with leads that have been added
+    const recentDealsList = document.querySelector('#view-dashboard .dash-row.r2 .card:nth-child(2) div');
+    if (recentDealsList && rwData.leads.length > 0) {
+      recentDealsList.innerHTML = rwData.leads.slice(0, 4).map(lead => `
+        <div class="deal-row">
+          <div class="da">${lead.name}</div>
+          <div class="dp">${lead.source}</div>
+          <div class="ds ${(lead.score || 'NEW').toLowerCase().replace(' ', '-')}">${lead.score || 'NEW'}</div>
+        </div>
+      `).join('');
+    }
+  }
+
+  // ============ SETTINGS UI ============
+  function loadSettingsForm() {
+    document.getElementById('set-name').value = rwData.user.name;
+    document.getElementById('set-role').value = rwData.user.role;
+    document.getElementById('set-avatar').value = rwData.user.avatar;
+    document.getElementById('set-apikey').value = rwData.settings.apiKey || '';
+  }
+
+  function updateSettings() {
+    rwData.user.name = document.getElementById('set-name').value.trim();
+    rwData.user.role = document.getElementById('set-role').value.trim();
+    rwData.user.avatar = document.getElementById('set-avatar').value.trim().toUpperCase();
+    rwData.settings.apiKey = document.getElementById('set-apikey').value.trim();
+
+    saveData();
+    updateUserUI();
+    alert("Settings saved!");
+  }
+
+  function resetAllData() {
+    if (confirm("Are you sure you want to delete all leads and tasks? This cannot be undone.")) {
+      localStorage.removeItem(RW_STORAGE_KEY);
+      location.reload();
+    }
   }
 
   // ============ LEAD SCORING ============
