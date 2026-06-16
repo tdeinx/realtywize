@@ -430,6 +430,26 @@
   }
   .view-all-btn:hover { background: var(--cyan-soft); }
 
+  /* Feature lock overlay */
+  .feature-lock {
+    position: absolute;
+    inset: 0;
+    background: rgba(10, 15, 28, 0.85);
+    backdrop-filter: blur(4px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2rem;
+    border-radius: 12px;
+    z-index: 10;
+    border: 1px solid var(--border);
+  }
+  .feature-lock .lock-icon { font-size: 2.5rem; margin-bottom: 1rem; opacity: 0.5; }
+  .feature-lock h3 { font-size: 1.1rem; margin-bottom: 0.5rem; color: var(--white); }
+  .feature-lock p { font-size: 0.85rem; color: var(--text-mid); max-width: 250px; }
+
   /* Pipeline */
   .pipeline-grid {
     display: grid;
@@ -541,6 +561,7 @@
     display: flex; align-items: center; gap: 0.5rem;
     transition: all 0.2s;
     font-family: 'Sora', sans-serif;
+    position: relative;
   }
   .ai-chip:hover { border-color: var(--cyan-border); background: var(--bg-hover); }
   .ai-chip-icon { color: var(--cyan); }
@@ -1440,6 +1461,122 @@
     text-transform: uppercase;
   }
 
+  /* ============ LEADS VIEW STYLES ============ */
+  .leads-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+  }
+  .btn-add {
+    padding: 0.75rem 1.25rem;
+    background: var(--cyan);
+    color: var(--black);
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: inherit;
+  }
+  .leads-table-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .leads-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .leads-table th {
+    text-align: left;
+    padding: 1rem;
+    background: rgba(255,255,255,0.03);
+    color: var(--text-mid);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .leads-table td {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.88rem;
+    color: var(--text-bright);
+  }
+  .leads-table tr:last-child td { border-bottom: none; }
+  .lead-name { font-weight: 600; color: var(--white); }
+  .lead-meta { font-size: 0.75rem; color: var(--text-dim); }
+
+  /* Tasks View */
+  .tasks-container {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  .task-add-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+  }
+  .task-add-row input { margin-bottom: 0; }
+  .btn-task-add {
+    padding: 0 1.5rem;
+    background: var(--cyan);
+    color: var(--black);
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .badge-score {
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .badge-score.hot { background: var(--hot-bg); color: var(--hot); }
+  .badge-score.warm { background: var(--warm-bg); color: var(--warm); }
+  .badge-score.cold { background: var(--cold-bg); color: var(--cold); }
+
+  /* Modal */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    z-index: 200;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-backdrop.active { display: flex; }
+  .modal {
+    background: var(--bg-card);
+    border: 1px solid var(--cyan-border);
+    width: min(500px, 90vw);
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 0 40px rgba(0,0,0,0.5);
+  }
+  .modal-h {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+  .modal-h h3 { font-size: 1.25rem; color: var(--white); }
+  .modal-close {
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    font-size: 1.5rem;
+    cursor: pointer;
+  }
+
   /* ============ RESPONSIVE ============ */
   @media (max-width: 1280px) {
     .dash-row.r1, .dash-row.r2 { grid-template-columns: 1fr 1fr; }
@@ -1488,6 +1625,7 @@
     font-size: 1.1rem;
   }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -1511,18 +1649,24 @@
     <nav class="sb-nav">
       <div class="sb-section-label">Workspace</div>
       <button class="sb-item active" data-view="dashboard"><span class="sb-icon">🏠</span> Dashboard</button>
+      <button class="sb-item" data-view="leads"><span class="sb-icon">👥</span> Leads</button>
+      <button class="sb-item" data-view="tasks"><span class="sb-icon">✓</span> Tasks</button>
       <button class="sb-item" data-view="deal-finder"><span class="sb-icon">🎯</span> Deal Finder</button>
       <button class="sb-item" data-view="ai-tools"><span class="sb-icon">🤖</span> AI Assistant</button>
-      <div class="sb-section-label" style="margin-top: 1rem;">Coming Soon</div>
-      <button class="sb-item sb-soon" data-view="leads"><span class="sb-icon">👥</span> Leads <span class="sb-tag">Soon</span></button>
+      <button class="sb-item" data-view="settings"><span class="sb-icon">⚙️</span> Settings</button>
+
+      <div id="admin-nav" style="display: none;">
+        <div class="sb-section-label" style="margin-top: 1.5rem;">Admin Control</div>
+        <button class="sb-item" data-view="admin-users"><span class="sb-icon">🛡️</span> User Management</button>
+      </div>
+
+      <div class="sb-section-label" style="margin-top: 1.5rem;">Coming Soon</div>
       <button class="sb-item sb-soon" data-view="conversations"><span class="sb-icon">💬</span> Conversations <span class="sb-tag">Soon</span></button>
       <button class="sb-item sb-soon" data-view="calendars"><span class="sb-icon">📅</span> Calendars <span class="sb-tag">Soon</span></button>
       <button class="sb-item sb-soon" data-view="properties"><span class="sb-icon">🏘️</span> Properties <span class="sb-tag">Soon</span></button>
       <button class="sb-item sb-soon" data-view="deals"><span class="sb-icon">💼</span> Deals <span class="sb-tag">Soon</span></button>
-      <button class="sb-item sb-soon" data-view="tasks"><span class="sb-icon">✓</span> Tasks <span class="sb-tag">Soon</span></button>
       <button class="sb-item sb-soon" data-view="marketing"><span class="sb-icon">📣</span> Marketing <span class="sb-tag">Soon</span></button>
       <button class="sb-item sb-soon" data-view="analytics"><span class="sb-icon">📊</span> Analytics <span class="sb-tag">Soon</span></button>
-      <button class="sb-item" data-view="settings" style="margin-top: 1rem;"><span class="sb-icon">⚙️</span> Settings</button>
     </nav>
     <div class="sb-user">
       <div class="sb-avatar">AJ</div>
@@ -1664,42 +1808,13 @@
           <!-- Conversations -->
           <div class="card">
             <div class="card-h">
-              <div class="card-title">Conversations</div>
+              <div class="card-title">Latest Leads</div>
               <button class="card-filter">All ▾</button>
             </div>
-            <div class="conv-list">
-              <div class="conv-item">
-                <div class="conv-avatar" style="background: linear-gradient(135deg, #00d4ff, #a78bfa);">JM</div>
-                <div class="conv-text">
-                  <div class="conv-name-row"><span class="conv-name">Jessica Moore</span><span class="conv-time">2m</span></div>
-                  <div class="conv-msg">Hi, I'm interested in 123 Main St...</div>
-                </div>
-                <div class="conv-status"></div>
-              </div>
-              <div class="conv-item">
-                <div class="conv-avatar" style="background: linear-gradient(135deg, #2dd4a0, #00d4ff);">MS</div>
-                <div class="conv-text">
-                  <div class="conv-name-row"><span class="conv-name">Michael Smith</span><span class="conv-time">5m</span></div>
-                  <div class="conv-msg">Do you have anything in the 28207...</div>
-                </div>
-                <div class="conv-status"></div>
-              </div>
-              <div class="conv-item">
-                <div class="conv-avatar" style="background: linear-gradient(135deg, #a78bfa, #f472b6);">SL</div>
-                <div class="conv-text">
-                  <div class="conv-name-row"><span class="conv-name">Samantha Lee</span><span class="conv-time">12m</span></div>
-                  <div class="conv-msg">I'd like to schedule a showing...</div>
-                </div>
-              </div>
-              <div class="conv-item">
-                <div class="conv-avatar" style="background: linear-gradient(135deg, #ffb547, #ff5e7a);">DB</div>
-                <div class="conv-text">
-                  <div class="conv-name-row"><span class="conv-name">David Brown</span><span class="conv-time">18m</span></div>
-                  <div class="conv-msg">What is the price on that listing?</div>
-                </div>
-              </div>
+            <div id="dash-leads-list" class="conv-list">
+              <!-- JS populated -->
             </div>
-            <button class="view-all-btn">View All Conversations</button>
+            <button class="view-all-btn" onclick="switchView('leads')">View All Leads</button>
           </div>
 
         </div>
@@ -2068,11 +2183,25 @@
 
       <!-- ============ PLACEHOLDER VIEWS (Empty States) ============ -->
       <div class="view" id="view-leads">
-        <div class="empty-view">
-          <div class="ev-icon">👥</div>
-          <h2>Leads</h2>
-          <p>Your full lead database with filtering, scoring, and bulk actions will live here. In the live version, this connects to your CRM and surfaces every inbound lead in real time.</p>
-          <div class="pill">On the Roadmap · 2026</div>
+        <div class="leads-header">
+          <h2>Lead Database</h2>
+          <button class="btn-add" onclick="openModal('modal-add-lead')"><span>+</span> Add Lead</button>
+        </div>
+        <div class="leads-table-card">
+          <table class="leads-table">
+            <thead>
+              <tr>
+                <th>Name / Contact</th>
+                <th>Source</th>
+                <th>AI Score</th>
+                <th>Type / Urgency</th>
+                <th>Created</th>
+              </tr>
+            </thead>
+            <tbody id="leads-list">
+              <!-- JS populated -->
+            </tbody>
+          </table>
         </div>
       </div>
       <div class="view" id="view-conversations">
@@ -2108,11 +2237,19 @@
         </div>
       </div>
       <div class="view" id="view-tasks">
-        <div class="empty-view">
-          <div class="ev-icon">✓</div>
-          <h2>Tasks</h2>
-          <p>Smart task lists auto-generated from lead actions, deal stages, and AI follow-up recommendations.</p>
-          <div class="pill">On the Roadmap · 2026</div>
+        <div class="tasks-container">
+          <div class="leads-header">
+            <h2>My Tasks</h2>
+          </div>
+          <div class="task-add-row">
+            <input type="text" id="new-task-text" placeholder="What needs to be done?">
+            <button class="btn-task-add" onclick="addNewTask()">Add Task</button>
+          </div>
+          <div class="card">
+            <div id="tasks-list-full" class="task-list">
+              <!-- JS populated -->
+            </div>
+          </div>
         </div>
       </div>
       <div class="view" id="view-marketing">
@@ -2131,21 +2268,423 @@
           <div class="pill">On the Roadmap · 2026</div>
         </div>
       </div>
+      <div class="view" id="view-admin-users">
+        <div class="tasks-container" style="max-width: 1000px;">
+          <div class="leads-header">
+            <h2>User Management</h2>
+          </div>
+          <div class="task-add-row">
+            <input type="text" id="user-search" placeholder="Search users by name or email..." oninput="renderAdminUsers()">
+          </div>
+          <div class="leads-table-card">
+            <table class="leads-table">
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Role</th>
+                  <th>Features</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="admin-users-list">
+                <!-- JS populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
       <div class="view" id="view-settings">
-        <div class="empty-view">
-          <div class="ev-icon">⚙️</div>
-          <h2>Settings</h2>
-          <p>Configure team members, integrations, brand colors, API keys, notification preferences, and billing.</p>
-          <div class="pill">On the Roadmap · 2026</div>
+        <div class="tasks-container">
+          <div class="leads-header">
+            <h2>Settings</h2>
+          </div>
+          <div class="card">
+            <div class="card-label">User Profile</div>
+            <label>Display Name</label>
+            <input type="text" id="set-name" placeholder="Alex Johnson">
+            <label>Role</label>
+            <input type="text" id="set-role" placeholder="Top Producer">
+            <label>Avatar Initials</label>
+            <input type="text" id="set-avatar" placeholder="AJ" maxlength="2">
+
+            <div class="card-label" style="margin-top: 2rem;">API Configuration</div>
+            <label>Anthropic API Key (Optional Override)</label>
+            <input type="password" id="set-apikey" placeholder="sk-ant-...">
+            <p style="font-size: 0.7rem; color: var(--text-dim); margin-top: -0.5rem; margin-bottom: 1rem;">
+              By default, the app uses the server-side key. Enter a key here to override for your session.
+            </p>
+
+            <button class="btn-analyze" onclick="updateSettings()">Save Settings</button>
+
+            <button class="view-all-btn" style="margin-top: 1rem;" onclick="handleLogout()">Logout</button>
+
+            <div style="margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border);">
+              <div class="card-label" style="color: var(--hot);">Danger Zone</div>
+              <p style="font-size: 0.85rem; color: var(--text-mid); margin-bottom: 1rem;">Resetting will clear all your saved leads and tasks from this browser.</p>
+              <button class="view-all-btn" style="border-color: var(--hot); color: var(--hot); width: auto; padding: 0.65rem 1.5rem;" onclick="resetAllData()">Reset All Data</button>
+            </div>
+          </div>
         </div>
       </div>
 
     </div>
   </main>
 
+  <!-- Modal: Onboarding -->
+  <div class="modal-backdrop" id="modal-onboarding" style="z-index: 300;">
+    <div class="modal" style="width: min(600px, 90vw);">
+      <div id="ob-step-1">
+        <div class="modal-h">
+          <h3>Welcome to Realtywize!</h3>
+        </div>
+        <p style="margin-bottom: 1.5rem; color: var(--text-mid);">Let's get your command center ready. First, what's your primary focus?</p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem;">
+          <button class="ai-chip" style="justify-content: center; height: 100px; flex-direction: column;" onclick="nextObStep(2, 'Listing Agent')">
+            <span style="font-size: 1.5rem; margin-bottom: 0.5rem;">🏠</span>
+            Listing Agent
+          </button>
+          <button class="ai-chip" style="justify-content: center; height: 100px; flex-direction: column;" onclick="nextObStep(2, 'Buyer Agent')">
+            <span style="font-size: 1.5rem; margin-bottom: 0.5rem;">🔑</span>
+            Buyer Agent
+          </button>
+          <button class="ai-chip" style="justify-content: center; height: 100px; flex-direction: column;" onclick="nextObStep(2, 'Investor')">
+            <span style="font-size: 1.5rem; margin-bottom: 0.5rem;">📊</span>
+            Investor
+          </button>
+          <button class="ai-chip" style="justify-content: center; height: 100px; flex-direction: column;" onclick="nextObStep(2, 'Broker')">
+            <span style="font-size: 1.5rem; margin-bottom: 0.5rem;">🏢</span>
+            Broker
+          </button>
+        </div>
+      </div>
+      <div id="ob-step-2" style="display: none;">
+        <div class="modal-h">
+          <h3>Almost there...</h3>
+        </div>
+        <p style="margin-bottom: 1.5rem; color: var(--text-mid);">One last thing: Do you have an Anthropic API key? (Optional)</p>
+        <label>Anthropic API Key</label>
+        <input type="password" id="ob-apikey" placeholder="sk-ant-...">
+        <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: -0.5rem; margin-bottom: 1.5rem;">
+          We use Claude for lead scoring and valuations. You can add your own key for higher limits, or use our shared key for now.
+        </p>
+        <button class="btn-analyze" onclick="completeOnboarding()">Finish Setup →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Auth -->
+  <div class="modal-backdrop active" id="modal-auth" style="z-index: 300;">
+    <div class="modal">
+      <div id="auth-login">
+        <div class="modal-h">
+          <h3>Welcome Back</h3>
+        </div>
+        <label>Email</label>
+        <input type="text" id="login-email" placeholder="you@example.com">
+        <label>Password</label>
+        <input type="password" id="login-password" placeholder="••••••••" style="width: 100%; padding: 0.8rem 1rem; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 8px; color: var(--white); margin-bottom: 1rem;">
+        <button class="btn-analyze" onclick="handleLogin()" id="login-btn">Login</button>
+        <p style="text-align: center; font-size: 0.85rem; margin-top: 1rem; color: var(--text-mid);">
+          Don't have an account? <a href="#" onclick="showAuth('signup')" style="color: var(--cyan);">Sign up</a>
+        </p>
+      </div>
+      <div id="auth-signup" style="display: none;">
+        <div class="modal-h">
+          <h3>Create Account</h3>
+        </div>
+        <label>Full Name</label>
+        <input type="text" id="signup-name" placeholder="Alex Johnson">
+        <label>Email</label>
+        <input type="text" id="signup-email" placeholder="you@example.com">
+        <label>Password</label>
+        <input type="password" id="signup-password" placeholder="••••••••" style="width: 100%; padding: 0.8rem 1rem; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 8px; color: var(--white); margin-bottom: 1rem;">
+        <button class="btn-analyze" onclick="handleSignup()" id="signup-btn">Sign Up</button>
+        <p style="text-align: center; font-size: 0.85rem; margin-top: 1rem; color: var(--text-mid);">
+          Already have an account? <a href="#" onclick="showAuth('login')" style="color: var(--cyan);">Login</a>
+        </p>
+      </div>
+      <div id="auth-error" class="error" style="display: none; margin-top: 1rem;"></div>
+    </div>
+  </div>
+
+  <!-- Modal: Add Lead -->
+  <div class="modal-backdrop" id="modal-add-lead">
+    <div class="modal">
+      <div class="modal-h">
+        <h3>Add New Lead</h3>
+        <button class="modal-close" onclick="closeModal('modal-add-lead')">×</button>
+      </div>
+      <label>Full Name</label>
+      <input type="text" id="nl-name" placeholder="John Doe">
+      <div class="input-row">
+        <div>
+          <label>Email</label>
+          <input type="text" id="nl-email" placeholder="john@example.com">
+        </div>
+        <div>
+          <label>Phone</label>
+          <input type="text" id="nl-phone" placeholder="555-0123">
+        </div>
+      </div>
+      <label>Lead Source</label>
+      <input type="text" id="nl-source" placeholder="e.g. Zillow, Referral, Facebook">
+      <label>Initial Message / Notes</label>
+      <textarea id="nl-message" placeholder="Paste their inquiry here for AI scoring..." style="min-height: 80px;"></textarea>
+      <button class="btn-analyze" id="nl-btn" onclick="addNewLead()">Add & Score Lead →</button>
+    </div>
+  </div>
+
 </div>
 
 <script>
+  // ============ SUPABASE CONFIG ============
+  // IMPORTANT: Populate these with your Supabase Project URL and Anon Key.
+  // You can find these in your Supabase Dashboard under Project Settings > API.
+  const SUPABASE_URL = "https://binbrzygycbwakpovrhp.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJpbmJyenlneWNid2FrcG92cmhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA4Mzc1NjUsImV4cCI6MjA5NjQxMzU2NX0.3Znev2vf_V7X-5gNGdf1Uu_AKERKKWtQIpzMfc_HjJQ";
+
+  let rwSupabase = null;
+  if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+    rwSupabase = window.rwSupabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  }
+
+  // ============ DATA MANAGEMENT ============
+  const RW_STORAGE_KEY = 'realtywize_data_v1';
+
+  let rwData = {
+    leads: [],
+    tasks: [],
+    user: {
+      id: null,
+      name: 'Guest',
+      role: 'Agent',
+      avatar: 'G',
+      sys_role: 'user',
+      flags: {
+        deal_finder: false,
+        ai_assistant: false,
+        valuation: false,
+        lead_management: true,
+        task_management: true
+      }
+    },
+    settings: {
+      apiKey: ''
+    },
+    admin: {
+      users: []
+    }
+  };
+
+  function loadData() {
+    const saved = localStorage.getItem(RW_STORAGE_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        rwData = { ...rwData, ...parsed };
+      } catch (e) {
+        console.error("Failed to parse saved data", e);
+      }
+    }
+    updateUserUI();
+  }
+
+  function saveData() {
+    localStorage.setItem(RW_STORAGE_KEY, JSON.stringify(rwData));
+  }
+
+  function updateUserUI() {
+    document.querySelectorAll('.sb-user-name').forEach(el => el.textContent = rwData.user.name);
+    document.querySelectorAll('.sb-user-role').forEach(el => el.textContent = rwData.user.role);
+    document.querySelectorAll('.sb-avatar').forEach(el => el.textContent = rwData.user.avatar);
+  }
+
+  // Initial load
+  // loadData(); // Replacing with Supabase session check
+  checkSession();
+
+  async function checkSession() {
+    if (!rwSupabase) {
+      console.warn("Supabase not configured. Using demo mode.");
+      loadData();
+      updateDashboardKPIs();
+      renderTasks();
+      return;
+    }
+
+    const { data: { session } } = await rwSupabase.auth.getSession();
+    if (session) {
+      onAuthenticated(session.user);
+    } else {
+      openModal('modal-auth');
+    }
+
+    rwSupabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        onAuthenticated(session.user);
+      } else if (event === 'SIGNED_OUT') {
+        location.reload();
+      }
+    });
+  }
+
+  async function onAuthenticated(user) {
+    closeModal('modal-auth');
+    rwData.user.id = user.id;
+
+    // Fetch profile
+    const { data: profile } = await rwSupabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+
+    if (profile) {
+      rwData.user.name = profile.display_name || user.email;
+      rwData.user.role = profile.role || 'Agent';
+      rwData.user.avatar = profile.avatar_initials || rwData.user.name.slice(0,2).toUpperCase();
+      rwData.user.sys_role = profile.role === 'admin' ? 'admin' : 'user';
+      rwData.user.flags = {
+        deal_finder: !!profile.deal_finder_enabled,
+        ai_assistant: !!profile.ai_assistant_enabled,
+        valuation: !!profile.valuation_enabled,
+        lead_management: !!profile.lead_management_enabled,
+        task_management: !!profile.task_management_enabled
+      };
+
+      if (rwData.user.sys_role === 'admin') {
+        document.getElementById('admin-nav').style.display = 'block';
+      }
+
+      if (!profile.onboarding_completed) {
+        openModal('modal-onboarding');
+      }
+    }
+
+    // Fetch user specific data
+    await syncFromSupabase();
+
+    updateUserUI();
+    updateDashboardKPIs();
+    renderTasks();
+    applyFeatureFlags();
+  }
+
+  async function syncFromSupabase() {
+    if (!rwSupabase) return;
+
+    const [leadsRes, tasksRes] = await Promise.all([
+      rwSupabase.from('leads').select('*').order('created_at', { ascending: false }),
+      rwSupabase.from('tasks').select('*').order('created_at', { ascending: false })
+    ]);
+
+    if (leadsRes.data) {
+      rwData.leads = leadsRes.data.map(l => ({
+        ...l,
+        created: l.created_at,
+        score: l.status.toUpperCase() // Mapping status to score for now
+      }));
+    }
+
+    if (tasksRes.data) {
+      rwData.tasks = tasksRes.data.map(t => ({
+        ...t,
+        done: t.completed,
+        created: t.created_at
+      }));
+    }
+  }
+
+  function showAuth(mode) {
+    document.getElementById('auth-login').style.display = mode === 'login' ? 'block' : 'none';
+    document.getElementById('auth-signup').style.display = mode === 'signup' ? 'block' : 'none';
+    document.getElementById('auth-error').style.display = 'none';
+  }
+
+  async function handleLogin() {
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+    const btn = document.getElementById('login-btn');
+    const errBox = document.getElementById('auth-error');
+
+    if (!rwSupabase) { alert("Supabase not configured."); return; }
+
+    btn.disabled = true;
+    btn.textContent = "Logging in...";
+    errBox.style.display = 'none';
+
+    const { error } = await rwSupabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      errBox.textContent = error.message;
+      errBox.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = "Login";
+    }
+  }
+
+  async function handleSignup() {
+    const email = document.getElementById('signup-email').value;
+    const password = document.getElementById('signup-password').value;
+    const name = document.getElementById('signup-name').value;
+    const btn = document.getElementById('signup-btn');
+    const errBox = document.getElementById('auth-error');
+
+    if (!rwSupabase) { alert("Supabase not configured."); return; }
+
+    btn.disabled = true;
+    btn.textContent = "Creating account...";
+    errBox.style.display = 'none';
+
+    const { error } = await rwSupabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          display_name: name,
+          avatar_initials: name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+        }
+      }
+    });
+
+    if (error) {
+      errBox.textContent = error.message;
+      errBox.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = "Sign Up";
+    } else {
+      alert("Check your email for confirmation!");
+    }
+  }
+
+  async function handleLogout() {
+    if (rwSupabase) await rwSupabase.auth.signOut();
+    location.reload();
+  }
+
+  function nextObStep(step, role) {
+    if (role) rwData.user.role = role;
+    document.getElementById('ob-step-1').style.display = step === 1 ? 'block' : 'none';
+    document.getElementById('ob-step-2').style.display = step === 2 ? 'block' : 'none';
+  }
+
+  async function completeOnboarding() {
+    const apiKey = document.getElementById('ob-apikey').value.trim();
+    if (apiKey) rwData.settings.apiKey = apiKey;
+
+    if (rwSupabase && rwData.user.id) {
+      await rwSupabase.from('profiles').update({
+        role: rwData.user.role,
+        onboarding_completed: true
+      }).eq('id', rwData.user.id);
+    }
+
+    closeModal('modal-onboarding');
+    saveData();
+    updateUserUI();
+    alert("Onboarding complete! Enjoy Realtywize.");
+  }
+
   // ============ SIDEBAR NAVIGATION ============
   const viewTitles = {
     'dashboard': 'Dashboard',
@@ -2158,7 +2697,8 @@
     'marketing': 'Marketing',
     'analytics': 'Analytics',
     'ai-tools': 'AI Assistant',
-    'settings': 'Settings'
+    'settings': 'Settings',
+    'admin-users': 'User Management'
   };
 
   document.querySelectorAll('.sb-item').forEach(item => {
@@ -2172,15 +2712,179 @@
 
   function switchView(view) {
     document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
-    document.querySelector(`.sb-item[data-view="${view}"]`).classList.add('active');
+    const sbItem = document.querySelector(`.sb-item[data-view="${view}"]`);
+    if (sbItem) sbItem.classList.add('active');
+
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    document.getElementById('view-' + view).classList.add('active');
+    const viewEl = document.getElementById('view-' + view);
+    if (viewEl) viewEl.classList.add('active');
+
     document.getElementById('page-title').textContent = viewTitles[view] || view;
+
+    if (view === 'leads') renderLeads();
+    if (view === 'tasks') renderTasks();
+    if (view === 'settings') loadSettingsForm();
+    if (view === 'dashboard') updateDashboardKPIs();
+    if (view === 'admin-users') fetchAdminUsers();
+
+    applyFeatureFlags();
+  }
+
+  function applyFeatureFlags() {
+    const f = rwData.user.flags;
+
+    // Deal Finder
+    const dfView = document.getElementById('view-deal-finder');
+    if (dfView) {
+      if (!f.deal_finder) {
+        if (!dfView.querySelector('.feature-lock')) {
+          const lock = document.createElement('div');
+          lock.className = 'feature-lock';
+          lock.innerHTML = `<div class="lock-icon">🔒</div><h3>Feature Locked</h3><p>The Deal Finder is not enabled on your account. Contact support to upgrade.</p>`;
+          dfView.appendChild(lock);
+        }
+      } else {
+        const lock = dfView.querySelector('.feature-lock');
+        if (lock) lock.remove();
+      }
+    }
+
+    // AI Assistant Tools
+    const aiView = document.getElementById('view-ai-tools');
+    if (aiView) {
+      if (!f.ai_assistant) {
+        if (!aiView.querySelector('.feature-lock')) {
+          const lock = document.createElement('div');
+          lock.className = 'feature-lock';
+          lock.innerHTML = `<div class="lock-icon">🤖</div><h3>AI Assistant Disabled</h3><p>This feature is not enabled on your account. Contact support to upgrade.</p>`;
+          aiView.appendChild(lock);
+        }
+      } else {
+        const lock = aiView.querySelector('.feature-lock');
+        if (lock) lock.remove();
+      }
+    }
+
+    // Dashboard AI chips
+    const aiSuggest = document.querySelector('.ai-suggest');
+    if (aiSuggest) {
+      if (!f.ai_assistant) {
+        if (!aiSuggest.querySelector('.feature-lock')) {
+          const lock = document.createElement('div');
+          lock.className = 'feature-lock';
+          lock.style.padding = '1rem';
+          lock.innerHTML = `<div class="lock-icon" style="font-size:1.5rem">🔒</div><p style="font-size:0.7rem">AI Assistant Disabled</p>`;
+          aiSuggest.style.position = 'relative';
+          aiSuggest.appendChild(lock);
+        }
+      } else {
+        const lock = aiSuggest.querySelector('.feature-lock');
+        if (lock) lock.remove();
+      }
+    }
+
+    // Valuation Tool (inside AI tools)
+    const valTab = document.querySelector('.tool-tab[data-tool="valuation"]');
+    if (valTab) {
+      if (!f.valuation) valTab.style.display = 'none';
+      else valTab.style.display = 'flex';
+    }
+
+    // Lead Management
+    const leadsNav = document.querySelector('.sb-item[data-view="leads"]');
+    if (leadsNav) {
+      if (!f.lead_management) leadsNav.style.display = 'none';
+      else leadsNav.style.display = 'flex';
+    }
+
+    // Task Management
+    const tasksNav = document.querySelector('.sb-item[data-view="tasks"]');
+    if (tasksNav) {
+      if (!f.task_management) tasksNav.style.display = 'none';
+      else tasksNav.style.display = 'flex';
+    }
+  }
+
+  async function fetchAdminUsers() {
+    if (rwData.user.sys_role !== 'admin' || !rwSupabase) return;
+    const { data, error } = await rwSupabase
+      .from('profiles')
+      .select('*')
+      .order('display_name');
+
+    if (data) {
+      rwData.admin.users = data;
+      renderAdminUsers();
+    }
+  }
+
+  function renderAdminUsers() {
+    const list = document.getElementById('admin-users-list');
+    if (!list) return;
+    const search = document.getElementById('user-search').value.toLowerCase();
+
+    const filtered = rwData.admin.users.filter(u =>
+      (u.display_name || '').toLowerCase().includes(search) ||
+      (u.email || '').toLowerCase().includes(search)
+    );
+
+    list.innerHTML = filtered.map(u => `
+      <tr>
+        <td>
+          <div class="lead-name">${u.display_name || 'No Name'}</div>
+          <div class="lead-meta">${u.email || 'No email'}</div>
+          <div class="lead-meta" style="font-size: 0.65rem; opacity: 0.5;">${u.id}</div>
+        </td>
+        <td>
+          <select class="card-filter" onchange="updateUserRole('${u.id}', this.value)">
+            <option value="user" ${u.role === 'user' ? 'selected' : ''}>User</option>
+            <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Admin</option>
+          </select>
+        </td>
+        <td>
+          <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+            <label style="margin:0; font-size: 0.7rem; display: flex; align-items: center; gap: 0.4rem;">
+              <input type="checkbox" ${u.deal_finder_enabled ? 'checked' : ''} onchange="updateUserFlag('${u.id}', 'deal_finder_enabled', this.checked)"> Deal Finder
+            </label>
+            <label style="margin:0; font-size: 0.7rem; display: flex; align-items: center; gap: 0.4rem;">
+              <input type="checkbox" ${u.ai_assistant_enabled ? 'checked' : ''} onchange="updateUserFlag('${u.id}', 'ai_assistant_enabled', this.checked)"> AI Assistant
+            </label>
+            <label style="margin:0; font-size: 0.7rem; display: flex; align-items: center; gap: 0.4rem;">
+              <input type="checkbox" ${u.valuation_enabled ? 'checked' : ''} onchange="updateUserFlag('${u.id}', 'valuation_enabled', this.checked)"> Valuation
+            </label>
+          </div>
+        </td>
+        <td>
+          <button class="copy-btn" onclick="alert('User ID: ' + '${u.id}')">ID</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  async function updateUserRole(userId, role) {
+    const { error } = await rwSupabase.from('profiles').update({ role }).eq('id', userId);
+    if (error) alert(error.message);
+    else fetchAdminUsers();
+  }
+
+  async function updateUserFlag(userId, flag, value) {
+    const update = {};
+    update[flag] = value;
+    const { error } = await rwSupabase.from('profiles').update(update).eq('id', userId);
+    if (error) alert(error.message);
+    else fetchAdminUsers();
   }
 
   // Mobile menu
   document.getElementById('menuBtn').addEventListener('click', () => {
     document.getElementById('sidebar').classList.toggle('open');
+  });
+
+  // Global escape for modals
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.modal-backdrop').forEach(m => m.classList.remove('active'));
+    }
   });
 
   // ============ TOOL TAB SWITCHING ============
@@ -2218,9 +2922,17 @@
   // ============ CLAUDE API HELPER ============
   // Calls go through a Netlify serverless function so the API key stays server-side.
   async function callClaude(prompt, maxTokens = 1000) {
+    // If user provided their own API key, we should ideally use it.
+    // However, the netlify function is designed to use the env var.
+    // If the user provided a key, we'll pass it in a header that the function could potentially use.
+    const headers = { "Content-Type": "application/json" };
+    if (rwData.settings.apiKey) {
+      headers["X-API-Key"] = rwData.settings.apiKey;
+    }
+
     const response = await fetch("/.netlify/functions/claude", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: headers,
       body: JSON.stringify({
         max_tokens: maxTokens,
         messages: [{ role: "user", content: prompt }]
@@ -2250,11 +2962,251 @@
   }
 
   function parseJSON(text) {
-    const cleaned = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
-    const start = cleaned.indexOf('{');
-    const end = cleaned.lastIndexOf('}');
-    if (start === -1 || end === -1) throw new Error("No JSON object found");
-    return JSON.parse(cleaned.substring(start, end + 1));
+    const start = text.indexOf('{');
+    const end = text.lastIndexOf('}');
+    if (start === -1 || end === -1) {
+      // Try fallback cleaning if no braces found
+      const cleaned = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+      return JSON.parse(cleaned);
+    }
+    return JSON.parse(text.substring(start, end + 1));
+  }
+
+  // ============ MODALS ============
+  function openModal(id) { document.getElementById(id).classList.add('active'); }
+  function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+  // ============ LEADS UI ============
+  function renderLeads() {
+    const list = document.getElementById('leads-list');
+    if (!list) return;
+    if (rwData.leads.length === 0) {
+      list.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:3rem;color:var(--text-dim);">No leads yet. Add your first lead to get started.</td></tr>';
+      return;
+    }
+    list.innerHTML = rwData.leads.map(lead => `
+      <tr>
+        <td>
+          <div class="lead-name">${lead.name}</div>
+          <div class="lead-meta">${lead.email} · ${lead.phone}</div>
+        </td>
+        <td>${lead.source}</td>
+        <td><span class="badge-score ${(lead.score || 'PENDING').toLowerCase()}">${lead.score || 'PENDING'}</span></td>
+        <td>${lead.type || '—'} · ${lead.urgency || '—'}</td>
+        <td>${new Date(lead.created).toLocaleDateString()}</td>
+      </tr>
+    `).join('');
+  }
+
+  async function addNewLead() {
+    const name = document.getElementById('nl-name').value.trim();
+    const email = document.getElementById('nl-email').value.trim();
+    const phone = document.getElementById('nl-phone').value.trim();
+    const source = document.getElementById('nl-source').value.trim();
+    const message = document.getElementById('nl-message').value.trim();
+    const btn = document.getElementById('nl-btn');
+
+    if (!name) { alert("Please enter a name."); return; }
+
+    btn.disabled = true;
+    btn.textContent = "Adding & Scoring...";
+
+    const newLead = {
+      id: Date.now(),
+      name, email, phone, source, message,
+      created: new Date().toISOString(),
+      score: 'PENDING',
+      type: '',
+      urgency: ''
+    };
+
+    // Try to score with AI
+    if (message) {
+      try {
+        const prompt = `You are Realtywize, an AI lead scoring assistant. Analyze this inquiry and respond with ONLY a JSON object:
+INQUIRY: """${message}"""
+SOURCE: ${source}
+
+{ "score": "HOT"|"WARM"|"COLD", "type": "Buyer"|"Seller"|"Investor"|"Renter"|"Browser", "urgency": "short description" }`;
+        const resp = await callClaude(prompt, 300);
+        const data = parseJSON(resp);
+        newLead.score = data.score;
+        newLead.type = data.type;
+        newLead.urgency = data.urgency;
+      } catch (e) {
+        console.error("AI Scoring failed for new lead", e);
+      }
+    }
+
+    if (rwSupabase && rwData.user.id) {
+      const { data, error } = await rwSupabase.from('leads').insert({
+        user_id: rwData.user.id,
+        name: newLead.name,
+        email: newLead.email,
+        phone: newLead.phone,
+        status: newLead.score,
+        score: 0,
+        score_reason: newLead.urgency,
+        source: newLead.source
+      }).select().single();
+
+      if (data) newLead.id = data.id;
+      if (error) console.error("Supabase insert error:", error);
+    }
+
+    rwData.leads.unshift(newLead);
+    saveData();
+    renderLeads();
+    closeModal('modal-add-lead');
+
+    // Clear form
+    document.getElementById('nl-name').value = '';
+    document.getElementById('nl-email').value = '';
+    document.getElementById('nl-phone').value = '';
+    document.getElementById('nl-source').value = '';
+    document.getElementById('nl-message').value = '';
+    btn.disabled = false;
+    btn.textContent = "Add & Score Lead →";
+  }
+
+  // ============ TASKS UI ============
+  function renderTasks() {
+    const list = document.getElementById('tasks-list-full');
+    const dashList = document.querySelector('#view-dashboard .task-list');
+    if (!list) return;
+
+    const taskHtml = rwData.tasks.length === 0
+      ? '<div style="text-align:center;padding:2rem;color:var(--text-dim);">No tasks for today.</div>'
+      : rwData.tasks.map(task => `
+        <div class="task-item">
+          <div class="task-check ${task.done ? 'done' : ''}" onclick="toggleTask(${task.id})"></div>
+          <div class="task-text ${task.done ? 'done' : ''}">${task.text}</div>
+          <div class="task-time">${new Date(task.created).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+        </div>
+      `).join('');
+
+    list.innerHTML = taskHtml;
+    if (dashList) dashList.innerHTML = taskHtml;
+  }
+
+  async function addNewTask() {
+    const input = document.getElementById('new-task-text');
+    const text = input.value.trim();
+    if (!text) return;
+
+    const newTask = {
+      id: Date.now(),
+      text,
+      done: false,
+      created: new Date().toISOString()
+    };
+
+    if (rwSupabase && rwData.user.id) {
+      const { data, error } = await rwSupabase.from('tasks').insert({
+        user_id: rwData.user.id,
+        text: newTask.text,
+        completed: newTask.done
+      }).select().single();
+
+      if (data) newTask.id = data.id;
+      if (error) console.error("Supabase insert error:", error);
+    }
+
+    rwData.tasks.unshift(newTask);
+    saveData();
+    renderTasks();
+    input.value = '';
+  }
+
+  async function toggleTask(id) {
+    const task = rwData.tasks.find(t => t.id === id);
+    if (task) {
+      task.done = !task.done;
+
+      if (rwSupabase && rwData.user.id && typeof id === 'string') {
+        // id is a string (uuid from supabase)
+        await rwSupabase.from('tasks').update({ completed: task.done }).eq('id', id);
+      }
+
+      saveData();
+      renderTasks();
+    }
+  }
+
+  // ============ DASHBOARD DYNAMIC ============
+  function updateDashboardKPIs() {
+    const leadsCount = rwData.leads.length;
+    const tasksCount = rwData.tasks.filter(t => !t.done).length;
+
+    // For demo purposes, we'll keep some of the fake numbers or make them slightly more dynamic
+    document.querySelector('.kpi-card:nth-child(1) .kpi-num-lg').textContent = leadsCount || '0';
+    document.querySelector('.kpi-card:nth-child(3) .kpi-num-lg').textContent = tasksCount || '0';
+    document.querySelector('.kpi-card:nth-child(3) .kpi-label-lg').textContent = 'Pending Tasks';
+
+    // Update Latest Leads on Dashboard
+    const dashLeadsList = document.getElementById('dash-leads-list');
+    if (dashLeadsList) {
+      dashLeadsList.innerHTML = rwData.leads.slice(0, 5).map(lead => {
+        const initials = lead.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+        const timeAgo = Math.floor((Date.now() - new Date(lead.created)) / 60000);
+        return `
+          <div class="conv-item" onclick="switchView('leads')">
+            <div class="conv-avatar" style="background: var(--cyan-soft); color: var(--cyan); border: 1px solid var(--cyan-border);">${initials}</div>
+            <div class="conv-text">
+              <div class="conv-name-row"><span class="conv-name">${lead.name}</span><span class="conv-time">${timeAgo}m</span></div>
+              <div class="conv-msg">${lead.message || 'No message provided.'}</div>
+            </div>
+            ${lead.score === 'HOT' ? '<div class="conv-status"></div>' : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Update Recent Deals with leads that have been added
+    const recentDealsList = document.querySelector('#view-dashboard .dash-row.r2 .card:nth-child(2) div');
+    if (recentDealsList && rwData.leads.length > 0) {
+      recentDealsList.innerHTML = rwData.leads.slice(0, 4).map(lead => `
+        <div class="deal-row">
+          <div class="da">${lead.name}</div>
+          <div class="dp">${lead.source}</div>
+          <div class="ds ${(lead.score || 'NEW').toLowerCase().replace(' ', '-')}">${lead.score || 'NEW'}</div>
+        </div>
+      `).join('');
+    }
+  }
+
+  // ============ SETTINGS UI ============
+  function loadSettingsForm() {
+    document.getElementById('set-name').value = rwData.user.name;
+    document.getElementById('set-role').value = rwData.user.role;
+    document.getElementById('set-avatar').value = rwData.user.avatar;
+    document.getElementById('set-apikey').value = rwData.settings.apiKey || '';
+  }
+
+  async function updateSettings() {
+    rwData.user.name = document.getElementById('set-name').value.trim();
+    rwData.user.role = document.getElementById('set-role').value.trim();
+    rwData.user.avatar = document.getElementById('set-avatar').value.trim().toUpperCase();
+    rwData.settings.apiKey = document.getElementById('set-apikey').value.trim();
+
+    if (rwSupabase && rwData.user.id) {
+      await rwSupabase.from('profiles').update({
+        display_name: rwData.user.name,
+        role: rwData.user.role,
+        avatar_initials: rwData.user.avatar
+      }).eq('id', rwData.user.id);
+    }
+
+    saveData();
+    updateUserUI();
+    alert("Settings saved!");
+  }
+
+  function resetAllData() {
+    if (confirm("Are you sure you want to delete all leads and tasks? This cannot be undone.")) {
+      localStorage.removeItem(RW_STORAGE_KEY);
+      location.reload();
+    }
   }
 
   // ============ LEAD SCORING ============
@@ -2991,3 +3943,39 @@ Return ONLY the message text. ${channel === 'email' ? 'Start with "Subject: ..."
 
 </body>
 </html>
+<script>
+  // Expose functions to window for inline event handlers
+  window.showAuth = showAuth;
+  window.handleLogin = handleLogin;
+  window.handleSignup = handleSignup;
+  window.handleLogout = handleLogout;
+  window.switchView = switchView;
+  window.switchTool = switchTool;
+  window.goToTools = goToTools;
+  window.loadLeadSample = loadLeadSample;
+  window.analyzeLead = analyzeLead;
+  window.analyzeValuation = analyzeValuation;
+  window.analyzeDeal = analyzeDeal;
+  window.runDealSearch = runDealSearch;
+  window.openModal = openModal;
+  window.closeModal = closeModal;
+  window.addNewLead = addNewLead;
+  window.renderLeads = renderLeads;
+  window.renderTasks = renderTasks;
+  window.addNewTask = addNewTask;
+  window.toggleTask = toggleTask;
+  window.loadSettingsForm = loadSettingsForm;
+  window.updateSettings = updateSettings;
+  window.resetAllData = resetAllData;
+  window.openDrawer = openDrawer;
+  window.closeDrawer = closeDrawer;
+  window.loadOutreach = loadOutreach;
+  window.copyOutreach = copyOutreach;
+  window.addToPipelineDemo = addToPipelineDemo;
+  window.renderAdminUsers = renderAdminUsers;
+  window.updateUserRole = updateUserRole;
+  window.updateUserFlag = updateUserFlag;
+  window.nextObStep = nextObStep;
+  window.completeOnboarding = completeOnboarding;
+  window.copyReply = copyReply;
+</script>
