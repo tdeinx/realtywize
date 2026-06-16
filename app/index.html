@@ -2444,9 +2444,9 @@
   const SUPABASE_URL = "https://binbrzygycbwakpovrhp.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJpbmJyenlneWNid2FrcG92cmhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA4Mzc1NjUsImV4cCI6MjA5NjQxMzU2NX0.3Znev2vf_V7X-5gNGdf1Uu_AKERKKWtQIpzMfc_HjJQ";
 
-  let supabase = null;
+  let rwSupabase = null;
   if (SUPABASE_URL && SUPABASE_ANON_KEY) {
-    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    rwSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   }
 
   // ============ DATA MANAGEMENT ============
@@ -2505,7 +2505,7 @@
   checkSession();
 
   async function checkSession() {
-    if (!supabase) {
+    if (!rwSupabase) {
       console.warn("Supabase not configured. Using demo mode.");
       loadData();
       updateDashboardKPIs();
@@ -2513,14 +2513,14 @@
       return;
     }
 
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await rwSupabase.auth.getSession();
     if (session) {
       onAuthenticated(session.user);
     } else {
       openModal('modal-auth');
     }
 
-    supabase.auth.onAuthStateChange((event, session) => {
+    rwSupabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
         onAuthenticated(session.user);
       } else if (event === 'SIGNED_OUT') {
@@ -2534,7 +2534,7 @@
     rwData.user.id = user.id;
 
     // Fetch profile
-    const { data: profile } = await supabase
+    const { data: profile } = await rwSupabase
       .from('profiles')
       .select('*')
       .eq('id', user.id)
@@ -2572,11 +2572,11 @@
   }
 
   async function syncFromSupabase() {
-    if (!supabase) return;
+    if (!rwSupabase) return;
 
     const [leadsRes, tasksRes] = await Promise.all([
-      supabase.from('leads').select('*').order('created_at', { ascending: false }),
-      supabase.from('tasks').select('*').order('created_at', { ascending: false })
+      rwSupabase.from('leads').select('*').order('created_at', { ascending: false }),
+      rwSupabase.from('tasks').select('*').order('created_at', { ascending: false })
     ]);
 
     if (leadsRes.data) {
@@ -2608,13 +2608,13 @@
     const btn = document.getElementById('login-btn');
     const errBox = document.getElementById('auth-error');
 
-    if (!supabase) { alert("Supabase not configured."); return; }
+    if (!rwSupabase) { alert("Supabase not configured."); return; }
 
     btn.disabled = true;
     btn.textContent = "Logging in...";
     errBox.style.display = 'none';
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await rwSupabase.auth.signInWithPassword({ email, password });
     if (error) {
       errBox.textContent = error.message;
       errBox.style.display = 'block';
@@ -2630,13 +2630,13 @@
     const btn = document.getElementById('signup-btn');
     const errBox = document.getElementById('auth-error');
 
-    if (!supabase) { alert("Supabase not configured."); return; }
+    if (!rwSupabase) { alert("Supabase not configured."); return; }
 
     btn.disabled = true;
     btn.textContent = "Creating account...";
     errBox.style.display = 'none';
 
-    const { error } = await supabase.auth.signUp({
+    const { error } = await rwSupabase.auth.signUp({
       email,
       password,
       options: {
@@ -2658,7 +2658,7 @@
   }
 
   async function handleLogout() {
-    if (supabase) await supabase.auth.signOut();
+    if (rwSupabase) await rwSupabase.auth.signOut();
     location.reload();
   }
 
@@ -2672,8 +2672,8 @@
     const apiKey = document.getElementById('ob-apikey').value.trim();
     if (apiKey) rwData.settings.apiKey = apiKey;
 
-    if (supabase && rwData.user.id) {
-      await supabase.from('profiles').update({
+    if (rwSupabase && rwData.user.id) {
+      await rwSupabase.from('profiles').update({
         role: rwData.user.role,
         onboarding_completed: true
       }).eq('id', rwData.user.id);
@@ -2806,8 +2806,8 @@
   }
 
   async function fetchAdminUsers() {
-    if (rwData.user.sys_role !== 'admin' || !supabase) return;
-    const { data, error } = await supabase
+    if (rwData.user.sys_role !== 'admin' || !rwSupabase) return;
+    const { data, error } = await rwSupabase
       .from('profiles')
       .select('*')
       .order('display_name');
@@ -2862,7 +2862,7 @@
   }
 
   async function updateUserRole(userId, role) {
-    const { error } = await supabase.from('profiles').update({ role }).eq('id', userId);
+    const { error } = await rwSupabase.from('profiles').update({ role }).eq('id', userId);
     if (error) alert(error.message);
     else fetchAdminUsers();
   }
@@ -2870,7 +2870,7 @@
   async function updateUserFlag(userId, flag, value) {
     const update = {};
     update[flag] = value;
-    const { error } = await supabase.from('profiles').update(update).eq('id', userId);
+    const { error } = await rwSupabase.from('profiles').update(update).eq('id', userId);
     if (error) alert(error.message);
     else fetchAdminUsers();
   }
@@ -3038,8 +3038,8 @@ SOURCE: ${source}
       }
     }
 
-    if (supabase && rwData.user.id) {
-      const { data, error } = await supabase.from('leads').insert({
+    if (rwSupabase && rwData.user.id) {
+      const { data, error } = await rwSupabase.from('leads').insert({
         user_id: rwData.user.id,
         name: newLead.name,
         email: newLead.email,
@@ -3101,8 +3101,8 @@ SOURCE: ${source}
       created: new Date().toISOString()
     };
 
-    if (supabase && rwData.user.id) {
-      const { data, error } = await supabase.from('tasks').insert({
+    if (rwSupabase && rwData.user.id) {
+      const { data, error } = await rwSupabase.from('tasks').insert({
         user_id: rwData.user.id,
         text: newTask.text,
         completed: newTask.done
@@ -3123,9 +3123,9 @@ SOURCE: ${source}
     if (task) {
       task.done = !task.done;
 
-      if (supabase && rwData.user.id && typeof id === 'string') {
-        // id is a string (uuid from supabase)
-        await supabase.from('tasks').update({ completed: task.done }).eq('id', id);
+      if (rwSupabase && rwData.user.id && typeof id === 'string') {
+        // id is a string (uuid from rwSupabase)
+        await rwSupabase.from('tasks').update({ completed: task.done }).eq('id', id);
       }
 
       saveData();
@@ -3189,8 +3189,8 @@ SOURCE: ${source}
     rwData.user.avatar = document.getElementById('set-avatar').value.trim().toUpperCase();
     rwData.settings.apiKey = document.getElementById('set-apikey').value.trim();
 
-    if (supabase && rwData.user.id) {
-      await supabase.from('profiles').update({
+    if (rwSupabase && rwData.user.id) {
+      await rwSupabase.from('profiles').update({
         display_name: rwData.user.name,
         role: rwData.user.role,
         avatar_initials: rwData.user.avatar
