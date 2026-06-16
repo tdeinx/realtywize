@@ -430,6 +430,26 @@
   }
   .view-all-btn:hover { background: var(--cyan-soft); }
 
+  /* Feature lock overlay */
+  .feature-lock {
+    position: absolute;
+    inset: 0;
+    background: rgba(10, 15, 28, 0.85);
+    backdrop-filter: blur(4px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2rem;
+    border-radius: 12px;
+    z-index: 10;
+    border: 1px solid var(--border);
+  }
+  .feature-lock .lock-icon { font-size: 2.5rem; margin-bottom: 1rem; opacity: 0.5; }
+  .feature-lock h3 { font-size: 1.1rem; margin-bottom: 0.5rem; color: var(--white); }
+  .feature-lock p { font-size: 0.85rem; color: var(--text-mid); max-width: 250px; }
+
   /* Pipeline */
   .pipeline-grid {
     display: grid;
@@ -541,6 +561,7 @@
     display: flex; align-items: center; gap: 0.5rem;
     transition: all 0.2s;
     font-family: 'Sora', sans-serif;
+    position: relative;
   }
   .ai-chip:hover { border-color: var(--cyan-border); background: var(--bg-hover); }
   .ai-chip-icon { color: var(--cyan); }
@@ -1634,6 +1655,11 @@
       <button class="sb-item" data-view="ai-tools"><span class="sb-icon">🤖</span> AI Assistant</button>
       <button class="sb-item" data-view="settings"><span class="sb-icon">⚙️</span> Settings</button>
 
+      <div id="admin-nav" style="display: none;">
+        <div class="sb-section-label" style="margin-top: 1.5rem;">Admin Control</div>
+        <button class="sb-item" data-view="admin-users"><span class="sb-icon">🛡️</span> User Management</button>
+      </div>
+
       <div class="sb-section-label" style="margin-top: 1.5rem;">Coming Soon</div>
       <button class="sb-item sb-soon" data-view="conversations"><span class="sb-icon">💬</span> Conversations <span class="sb-tag">Soon</span></button>
       <button class="sb-item sb-soon" data-view="calendars"><span class="sb-icon">📅</span> Calendars <span class="sb-tag">Soon</span></button>
@@ -2242,6 +2268,32 @@
           <div class="pill">On the Roadmap · 2026</div>
         </div>
       </div>
+      <div class="view" id="view-admin-users">
+        <div class="tasks-container" style="max-width: 1000px;">
+          <div class="leads-header">
+            <h2>User Management</h2>
+          </div>
+          <div class="task-add-row">
+            <input type="text" id="user-search" placeholder="Search users by name or email..." oninput="renderAdminUsers()">
+          </div>
+          <div class="leads-table-card">
+            <table class="leads-table">
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Role</th>
+                  <th>Features</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="admin-users-list">
+                <!-- JS populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
       <div class="view" id="view-settings">
         <div class="tasks-container">
           <div class="leads-header">
@@ -2407,10 +2459,21 @@
       id: null,
       name: 'Guest',
       role: 'Agent',
-      avatar: 'G'
+      avatar: 'G',
+      sys_role: 'user',
+      flags: {
+        deal_finder: false,
+        ai_assistant: false,
+        valuation: false,
+        lead_management: true,
+        task_management: true
+      }
     },
     settings: {
       apiKey: ''
+    },
+    admin: {
+      users: []
     }
   };
 
@@ -2481,6 +2544,18 @@
       rwData.user.name = profile.display_name || user.email;
       rwData.user.role = profile.role || 'Agent';
       rwData.user.avatar = profile.avatar_initials || rwData.user.name.slice(0,2).toUpperCase();
+      rwData.user.sys_role = profile.role === 'admin' ? 'admin' : 'user';
+      rwData.user.flags = {
+        deal_finder: !!profile.deal_finder_enabled,
+        ai_assistant: !!profile.ai_assistant_enabled,
+        valuation: !!profile.valuation_enabled,
+        lead_management: !!profile.lead_management_enabled,
+        task_management: !!profile.task_management_enabled
+      };
+
+      if (rwData.user.sys_role === 'admin') {
+        document.getElementById('admin-nav').style.display = 'block';
+      }
 
       if (!profile.onboarding_completed) {
         openModal('modal-onboarding');
@@ -2493,6 +2568,7 @@
     updateUserUI();
     updateDashboardKPIs();
     renderTasks();
+    applyFeatureFlags();
   }
 
   async function syncFromSupabase() {
@@ -2621,7 +2697,8 @@
     'marketing': 'Marketing',
     'analytics': 'Analytics',
     'ai-tools': 'AI Assistant',
-    'settings': 'Settings'
+    'settings': 'Settings',
+    'admin-users': 'User Management'
   };
 
   document.querySelectorAll('.sb-item').forEach(item => {
@@ -2635,15 +2712,167 @@
 
   function switchView(view) {
     document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
-    document.querySelector(`.sb-item[data-view="${view}"]`).classList.add('active');
+    const sbItem = document.querySelector(`.sb-item[data-view="${view}"]`);
+    if (sbItem) sbItem.classList.add('active');
+
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    document.getElementById('view-' + view).classList.add('active');
+    const viewEl = document.getElementById('view-' + view);
+    if (viewEl) viewEl.classList.add('active');
+
     document.getElementById('page-title').textContent = viewTitles[view] || view;
 
     if (view === 'leads') renderLeads();
     if (view === 'tasks') renderTasks();
     if (view === 'settings') loadSettingsForm();
     if (view === 'dashboard') updateDashboardKPIs();
+    if (view === 'admin-users') fetchAdminUsers();
+
+    applyFeatureFlags();
+  }
+
+  function applyFeatureFlags() {
+    const f = rwData.user.flags;
+
+    // Deal Finder
+    const dfView = document.getElementById('view-deal-finder');
+    if (dfView) {
+      if (!f.deal_finder) {
+        if (!dfView.querySelector('.feature-lock')) {
+          const lock = document.createElement('div');
+          lock.className = 'feature-lock';
+          lock.innerHTML = `<div class="lock-icon">🔒</div><h3>Feature Locked</h3><p>The Deal Finder is not enabled on your account. Contact support to upgrade.</p>`;
+          dfView.appendChild(lock);
+        }
+      } else {
+        const lock = dfView.querySelector('.feature-lock');
+        if (lock) lock.remove();
+      }
+    }
+
+    // AI Assistant Tools
+    const aiView = document.getElementById('view-ai-tools');
+    if (aiView) {
+      if (!f.ai_assistant) {
+        if (!aiView.querySelector('.feature-lock')) {
+          const lock = document.createElement('div');
+          lock.className = 'feature-lock';
+          lock.innerHTML = `<div class="lock-icon">🤖</div><h3>AI Assistant Disabled</h3><p>This feature is not enabled on your account. Contact support to upgrade.</p>`;
+          aiView.appendChild(lock);
+        }
+      } else {
+        const lock = aiView.querySelector('.feature-lock');
+        if (lock) lock.remove();
+      }
+    }
+
+    // Dashboard AI chips
+    const aiSuggest = document.querySelector('.ai-suggest');
+    if (aiSuggest) {
+      if (!f.ai_assistant) {
+        if (!aiSuggest.querySelector('.feature-lock')) {
+          const lock = document.createElement('div');
+          lock.className = 'feature-lock';
+          lock.style.padding = '1rem';
+          lock.innerHTML = `<div class="lock-icon" style="font-size:1.5rem">🔒</div><p style="font-size:0.7rem">AI Assistant Disabled</p>`;
+          aiSuggest.style.position = 'relative';
+          aiSuggest.appendChild(lock);
+        }
+      } else {
+        const lock = aiSuggest.querySelector('.feature-lock');
+        if (lock) lock.remove();
+      }
+    }
+
+    // Valuation Tool (inside AI tools)
+    const valTab = document.querySelector('.tool-tab[data-tool="valuation"]');
+    if (valTab) {
+      if (!f.valuation) valTab.style.display = 'none';
+      else valTab.style.display = 'flex';
+    }
+
+    // Lead Management
+    const leadsNav = document.querySelector('.sb-item[data-view="leads"]');
+    if (leadsNav) {
+      if (!f.lead_management) leadsNav.style.display = 'none';
+      else leadsNav.style.display = 'flex';
+    }
+
+    // Task Management
+    const tasksNav = document.querySelector('.sb-item[data-view="tasks"]');
+    if (tasksNav) {
+      if (!f.task_management) tasksNav.style.display = 'none';
+      else tasksNav.style.display = 'flex';
+    }
+  }
+
+  async function fetchAdminUsers() {
+    if (rwData.user.sys_role !== 'admin' || !supabase) return;
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .order('display_name');
+
+    if (data) {
+      rwData.admin.users = data;
+      renderAdminUsers();
+    }
+  }
+
+  function renderAdminUsers() {
+    const list = document.getElementById('admin-users-list');
+    if (!list) return;
+    const search = document.getElementById('user-search').value.toLowerCase();
+
+    const filtered = rwData.admin.users.filter(u =>
+      (u.display_name || '').toLowerCase().includes(search) ||
+      (u.email || '').toLowerCase().includes(search)
+    );
+
+    list.innerHTML = filtered.map(u => `
+      <tr>
+        <td>
+          <div class="lead-name">${u.display_name || 'No Name'}</div>
+          <div class="lead-meta">${u.email || 'No email'}</div>
+          <div class="lead-meta" style="font-size: 0.65rem; opacity: 0.5;">${u.id}</div>
+        </td>
+        <td>
+          <select class="card-filter" onchange="updateUserRole('${u.id}', this.value)">
+            <option value="user" ${u.role === 'user' ? 'selected' : ''}>User</option>
+            <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Admin</option>
+          </select>
+        </td>
+        <td>
+          <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+            <label style="margin:0; font-size: 0.7rem; display: flex; align-items: center; gap: 0.4rem;">
+              <input type="checkbox" ${u.deal_finder_enabled ? 'checked' : ''} onchange="updateUserFlag('${u.id}', 'deal_finder_enabled', this.checked)"> Deal Finder
+            </label>
+            <label style="margin:0; font-size: 0.7rem; display: flex; align-items: center; gap: 0.4rem;">
+              <input type="checkbox" ${u.ai_assistant_enabled ? 'checked' : ''} onchange="updateUserFlag('${u.id}', 'ai_assistant_enabled', this.checked)"> AI Assistant
+            </label>
+            <label style="margin:0; font-size: 0.7rem; display: flex; align-items: center; gap: 0.4rem;">
+              <input type="checkbox" ${u.valuation_enabled ? 'checked' : ''} onchange="updateUserFlag('${u.id}', 'valuation_enabled', this.checked)"> Valuation
+            </label>
+          </div>
+        </td>
+        <td>
+          <button class="copy-btn" onclick="alert('User ID: ' + '${u.id}')">ID</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  async function updateUserRole(userId, role) {
+    const { error } = await supabase.from('profiles').update({ role }).eq('id', userId);
+    if (error) alert(error.message);
+    else fetchAdminUsers();
+  }
+
+  async function updateUserFlag(userId, flag, value) {
+    const update = {};
+    update[flag] = value;
+    const { error } = await supabase.from('profiles').update(update).eq('id', userId);
+    if (error) alert(error.message);
+    else fetchAdminUsers();
   }
 
   // Mobile menu
