@@ -1669,10 +1669,10 @@
       <button class="sb-item sb-soon" data-view="analytics"><span class="sb-icon">📊</span> Analytics <span class="sb-tag">Soon</span></button>
     </nav>
     <div class="sb-user">
-      <div class="sb-avatar">AJ</div>
+      <div class="sb-avatar">...</div>
       <div class="sb-user-text">
-        <div class="sb-user-name">Alex Johnson</div>
-        <div class="sb-user-role">Top Producer</div>
+        <div class="sb-user-name">Loading...</div>
+        <div class="sb-user-role">...</div>
       </div>
     </div>
   </aside>
@@ -1687,7 +1687,7 @@
         <h1 id="page-title">Dashboard</h1>
       </div>
       <div class="topbar-actions">
-        <div class="date-pill">📅 May 12 — May 19, 2026</div>
+        <div class="date-pill"></div>
         <a href="/" class="back-link">← Back to site</a>
       </div>
     </div>
@@ -2106,7 +2106,7 @@
         <div class="df-header">
           <div>
             <h2 class="df-title">Deal Finder · Hunt off-market opportunities.</h2>
-            <p class="df-sub">Plugged into your BatchData feed. Search in plain English, get AI-ranked distressed properties with drafted outreach in seconds.</p>
+            <p class="df-sub">Search in plain English to find AI-ranked distressed properties and generate drafted outreach in seconds. (Reviewing demo dataset)</p>
           </div>
           <div class="df-badge">DEMO DATA</div>
         </div>
@@ -2498,6 +2498,7 @@
     document.querySelectorAll('.sb-user-name').forEach(el => el.textContent = rwData.user.name);
     document.querySelectorAll('.sb-user-role').forEach(el => el.textContent = rwData.user.role);
     document.querySelectorAll('.sb-avatar').forEach(el => el.textContent = rwData.user.avatar);
+
   }
 
   // Initial load
@@ -3134,7 +3135,20 @@ SOURCE: ${source}
   }
 
   // ============ DASHBOARD DYNAMIC ============
+  function updateDatePill() {
+    const now = new Date();
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay());
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+
+    const fmt = { month: 'short', day: 'numeric' };
+    const dateStr = `📅 ${startOfWeek.toLocaleDateString('en-US', fmt)} — ${endOfWeek.toLocaleDateString('en-US', { ...fmt, year: 'numeric' })}`;
+    document.querySelectorAll('.date-pill').forEach(el => el.textContent = dateStr);
+  }
+
   function updateDashboardKPIs() {
+    updateDatePill();
     const leadsCount = rwData.leads.length;
     const tasksCount = rwData.tasks.filter(t => !t.done).length;
 
@@ -3876,13 +3890,14 @@ Return ONLY a JSON object: {"grade":"A","reason":"one short sentence","play":"on
       code:        "discreet, problem-solver framing, 'help getting it back in shape OR sold as-is'"
     };
 
+    const agentName = rwData.user.name && rwData.user.name !== 'Guest' ? rwData.user.name : '[Your Name]';
     const channelInstr = {
-      letter:  "a direct-mail letter, 150-200 words, signed 'Alex Johnson, Realtywize Real Estate', return address can be a placeholder.",
+      letter:  `a direct-mail letter, 150-200 words, signed '${agentName}, Realtywize Real Estate', return address can be a placeholder.`,
       text:    "a SMS text message, MAXIMUM 320 characters across one or two short messages — short, casual, no formal salutation, ends with a question.",
       email:   "an email with a subject line and body 100-150 words, conversational, ends with clear next step."
     };
 
-    const prompt = `You are writing first-touch off-market outreach for an investor-focused real estate agent named Alex Johnson at Realtywize. The agent works with cash investors and helps owners sell off-market without listing.
+    const prompt = `You are writing first-touch off-market outreach for an investor-focused real estate agent named ${agentName} at Realtywize. The agent works with cash investors and helps owners sell off-market without listing.
 
 Property: ${p.addr}, ${p.city}, ${p.state}
 Owner: ${p.owner}${p.absentee ? ' (lives in ' + p.ownerCity + ', ' + p.ownerState + ')' : ''}
@@ -3935,9 +3950,13 @@ Return ONLY the message text. ${channel === 'email' ? 'Start with "Subject: ..."
 
   // Initialize on load
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initDealFinder);
+    document.addEventListener('DOMContentLoaded', () => {
+      initDealFinder();
+      updateDatePill();
+    });
   } else {
     initDealFinder();
+    updateDatePill();
   }
 </script>
 
@@ -3978,4 +3997,5 @@ Return ONLY the message text. ${channel === 'email' ? 'Start with "Subject: ..."
   window.nextObStep = nextObStep;
   window.completeOnboarding = completeOnboarding;
   window.copyReply = copyReply;
+  window.updateDatePill = updateDatePill;
 </script>

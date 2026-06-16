@@ -1,0 +1,5 @@
+.DS_Store
+.env
+verify_auth.py
+verify_syntax.py
+verify_final_fixed.png
