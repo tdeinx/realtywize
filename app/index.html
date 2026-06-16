@@ -1688,7 +1688,6 @@
       </div>
       <div class="topbar-actions">
         <div class="date-pill"></div>
-        <a href="/" class="back-link">← Back to site</a>
       </div>
     </div>
 
@@ -2939,17 +2938,21 @@
         messages: [{ role: "user", content: prompt }]
       })
     });
+    const rawBody = await response.text();
     if (!response.ok) {
-      let detail = "";
+      let detail = rawBody;
       try {
-        const errJson = await response.json();
-        detail = errJson.detail || errJson.error || "";
-      } catch (_) {
-        detail = await response.text();
-      }
-      throw new Error("API Error (" + response.status + "): " + detail);
+        const errJson = JSON.parse(rawBody);
+        detail = errJson.detail || errJson.error || rawBody;
+      } catch (_) { /* body wasn't JSON; keep raw text */ }
+      throw new Error("API Error (" + response.status + "): " + (detail || "(empty response body)"));
     }
-    const data = await response.json();
+    let data;
+    try {
+      data = JSON.parse(rawBody);
+    } catch (_) {
+      throw new Error("Proxy returned non-JSON response: " + rawBody.slice(0, 200));
+    }
     if (typeof data.text === "string") {
       return data.text;
     }
