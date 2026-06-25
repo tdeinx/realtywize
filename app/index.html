@@ -4236,9 +4236,15 @@ Return ONLY the JSON object.`;
       const valueFmt = lead.value ? '$' + lead.value.toLocaleString() : '—';
       const equityFmt = lead.equityPct ? lead.equityPct + '%' : '—';
       let bbBadge = '<span style="color:var(--text-muted);font-size:12px;">Not scored</span>';
-      if (lead.buyBoxLabel === 'strong') bbBadge = '<span style="color:#4ee2ff;font-size:12px;font-weight:500;">✓ Strong Match</span>';
-      else if (lead.buyBoxLabel === 'near') bbBadge = '<span style="color:#ffc107;font-size:12px;font-weight:500;">~ Near Miss</span>';
-      else if (lead.buyBoxLabel === 'out') bbBadge = '<span style="color:#888;font-size:12px;">✗ Out</span>';
+      if (lead.buyBoxLabel === 'strong') {
+        bbBadge = '<span style="color:#4ee2ff;font-size:12px;font-weight:500;">✓ Strong Match</span>';
+      } else if (lead.buyBoxLabel === 'near') {
+        const hints = (lead.buyBoxNearMisses || []).map(m => `<div style="font-size:11px;color:#ffc107;margin-top:2px;">↳ ${m}</div>`).join('');
+        bbBadge = `<span style="color:#ffc107;font-size:12px;font-weight:500;">~ Near Miss</span>${hints}`;
+      } else if (lead.buyBoxLabel === 'out') {
+        const fails = (lead.buyBoxHardFails || []).map(f => `<div style="font-size:11px;color:#888;margin-top:2px;">✗ ${f}</div>`).join('');
+        bbBadge = `<span style="color:#888;font-size:12px;">Out of criteria</span>${fails}`;
+      }
 
       return `<tr>
         <td style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${label}">${label}</td>
@@ -4246,8 +4252,9 @@ Return ONLY the JSON object.`;
         <td>${valueFmt}</td>
         <td>${equityFmt}</td>
         <td>${bbBadge}</td>
-        <td>
-          <button class="sample-btn" onclick="sendToAnalyzer('${lead.id}')" style="font-size:11px;">Analyze →</button>
+        <td style="min-width:120px;">
+          <button class="sample-btn" onclick="sendToAnalyzer('${lead.id}')" style="font-size:11px; display:block; margin-bottom:4px;">Analyze →</button>
+          ${lead.buyBoxLabel === 'near' ? `<button class="sample-btn" onclick="coachNearMiss('${lead.id}')" style="font-size:11px; color:#ffc107; border-color:#ffc107;">Coach me →</button>` : ''}
         </td>
       </tr>`;
     }).join('');
@@ -4263,39 +4270,159 @@ Return ONLY the JSON object.`;
     let strong = 0, near = 0, out = 0;
 
     liLeads = liLeads.map(lead => {
-      const failures = [];
+      const hardFails = [];
       const nearMisses = [];
 
-      if (bb.maxPrice && lead.value > 0 && lead.value > bb.maxPrice) {
+      // Max price check
+      if (bb.maxPrice && lead.value > 0) {
         const overBy = lead.value - bb.maxPrice;
-        if (overBy / bb.maxPrice > 0.15) failures.push('over max price');
-        else nearMisses.push('slightly over max price ($' + Math.round(overBy).toLocaleString() + ' over)');
+        if (overBy > 0) {
+          const overPct = overBy / bb.maxPrice;
+          if (overPct > 0.20) hardFails.push(`Est. value ${overPct > 0 ? '+' : ''}${Math.round(overPct * 100)}% over your max price of $${bb.maxPrice.toLocaleString()}`);
+          else nearMisses.push(`Est. value $${Math.round(overBy).toLocaleString()} over your max price — negotiate down or raise ceiling to $${Math.round(lead.value).toLocaleString()}`);
+        }
       }
-      if (bb.minEquity && lead.equityPct > 0 && lead.equityPct < bb.minEquity) {
+
+      // Min price check
+      if (bb.minPrice && lead.value > 0 && lead.value < bb.minPrice) {
+        nearMisses.push(`Est. value below your minimum of $${bb.minPrice.toLocaleString()} — may be too small for your model`);
+      }
+
+      // Min equity check
+      if (bb.minEquity && lead.equityPct > 0) {
         const shortBy = bb.minEquity - lead.equityPct;
-        if (shortBy > 10) failures.push('equity too low');
-        else nearMisses.push('equity ' + shortBy.toFixed(0) + '% below minimum');
+        if (shortBy > 0) {
+          if (shortBy > 15) hardFails.push(`Equity ${lead.equityPct}% — ${shortBy.toFixed(0)}% below your minimum of ${bb.minEquity}%`);
+          else nearMisses.push(`Equity ${lead.equityPct}% — only ${shortBy.toFixed(0)}% below your ${bb.minEquity}% minimum. A lower offer price could close this gap.`);
+        }
       }
+
+      // Priority signals check
       if (bb.signals && bb.signals.length > 0) {
-        const hasSignal = (lead.signals || []).some(s => bb.signals.includes(s));
-        if (!hasSignal) nearMisses.push('no priority signals');
+        const matchedSignals = (lead.signals || []).filter(s => bb.signals.includes(s));
+        if (matchedSignals.length === 0) {
+          nearMisses.push(`No priority signals match your buy box (you want: ${bb.signals.join(', ')})`);
+        }
       }
 
+      // Property type check (only if lead has type data and buy box has type criteria)
+      if (bb.propTypes && bb.propTypes.length > 0 && lead.propType) {
+        if (!bb.propTypes.includes(lead.propType)) {
+          hardFails.push(`Property type "${lead.propType}" not in your buy box`);
+        }
+      }
+
+      // Determine label
       let label, score;
-      if (failures.length === 0 && nearMisses.length === 0) {
-        label = 'strong'; score = 90; strong++;
-      } else if (failures.length === 0 && nearMisses.length > 0) {
-        label = 'near'; score = 60; near++;
+      if (hardFails.length === 0 && nearMisses.length === 0) {
+        label = 'strong'; score = 92; strong++;
+      } else if (hardFails.length === 0 && nearMisses.length > 0) {
+        label = 'near'; score = 58; near++;
       } else {
-        label = 'out'; score = 20; out++;
+        label = 'out'; score = 15; out++;
       }
 
-      return { ...lead, buyBoxLabel: label, buyBoxScore: score, buyBoxNotes: [...failures, ...nearMisses] };
+      return {
+        ...lead,
+        buyBoxLabel: label,
+        buyBoxScore: score,
+        buyBoxHardFails: hardFails,
+        buyBoxNearMisses: nearMisses
+      };
     });
 
     liSave();
     renderLeadTable();
-    liStatus(`✓ Scored ${liLeads.length} leads — ${strong} strong matches, ${near} near misses, ${out} out of criteria.`);
+    liStatus(`✓ Scored ${liLeads.length} leads — ${strong} strong, ${near} near misses, ${out} out of criteria.`);
+  }
+
+  async function coachNearMiss(leadId) {
+    const lead = liLeads.find(l => l.id === leadId);
+    if (!lead) return;
+
+    const raw = localStorage.getItem('rw_buy_box');
+    const bb = raw ? JSON.parse(raw) : {};
+
+    const label = [lead.address, lead.city, lead.state, lead.zip].filter(Boolean).join(', ') || 'No address provided';
+
+    liStatus('🤖 AI is analyzing near-miss... this may take a few seconds.');
+
+    const prompt = `You are Realtywize, an AI deal coach for real estate investors. A lead almost fits the investor's buy box but misses on a few criteria. Give specific, actionable coaching on how to make this deal work.
+
+LEAD:
+- Property: ${label}
+- Estimated Value: ${lead.value ? '$' + lead.value.toLocaleString() : 'Unknown'}
+- Equity: ${lead.equityPct ? lead.equityPct + '%' : 'Unknown'}
+- Signals: ${(lead.signals || []).join(', ') || 'None'}
+- Years owned: ${lead.yearsOwned || 'Unknown'}
+
+INVESTOR BUY BOX:
+- Target markets: ${bb.markets || 'Any'}
+- Max purchase price: ${bb.maxPrice ? '$' + bb.maxPrice.toLocaleString() : 'Not set'}
+- Min equity: ${bb.minEquity ? bb.minEquity + '%' : 'Not set'}
+- Min cash-on-cash return: ${bb.minCoC ? bb.minCoC + '%' : 'Not set'}
+- Max rehab: ${bb.maxRehab ? '$' + bb.maxRehab.toLocaleString() : 'Not set'}
+- Exit strategies: ${(bb.exitStrats || []).join(', ') || 'Not set'}
+- Priority signals: ${(bb.signals || []).join(', ') || 'Not set'}
+
+NEAR-MISS REASONS:
+${(lead.buyBoxNearMisses || []).map((m, i) => `${i + 1}. ${m}`).join('\n')}
+
+Respond with ONLY a JSON object (no markdown, no extra text):
+{
+  "headline": "<one punchy sentence — is this worth pursuing or not>",
+  "coaching": [
+    { "issue": "<the specific criteria it misses>", "fix": "<exactly what needs to change — specific numbers where possible>", "feasibility": "easy" | "possible" | "tough" }
+  ],
+  "max_offer": "<if price is the issue, what offer price would make this deal fit the buy box — or 'Not a price issue'>",
+  "bottom_line": "<2 sentences — pursue, pass, or negotiate, with clear reasoning>"
+}
+
+Return ONLY the JSON object.`;
+
+    try {
+      const responseText = await callClaude(prompt, 800);
+      const data = parseJSON(responseText);
+
+      const feasColors = { easy: '#4ee2ff', possible: '#ffc107', tough: '#ff6b6b' };
+
+      const coachingHTML = (data.coaching || []).map(c => `
+        <div style="border:0.5px solid var(--border); border-radius:8px; padding:0.75rem; margin-bottom:0.5rem;">
+          <div style="font-size:12px; font-weight:500; color:var(--white); margin-bottom:4px;">${c.issue}</div>
+          <div style="font-size:12px; color:var(--text-muted); margin-bottom:6px;">${c.fix}</div>
+          <span style="font-size:11px; padding:2px 8px; border-radius:4px; background:rgba(255,255,255,0.05); color:${feasColors[c.feasibility] || '#888'};">${c.feasibility}</span>
+        </div>
+      `).join('');
+
+      const modal = document.createElement('div');
+      modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1rem;';
+      modal.innerHTML = `
+        <div style="background:#0d1424;border:0.5px solid var(--border);border-radius:12px;padding:1.5rem;max-width:500px;width:100%;max-height:80vh;overflow-y:auto;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+            <h3 style="margin:0;font-size:15px;color:var(--white);">🎯 Near-Miss Coach</h3>
+            <button onclick="this.closest('[style*=fixed]').remove()" style="background:none;border:none;color:var(--text-muted);font-size:18px;cursor:pointer;">✕</button>
+          </div>
+          <div style="font-size:13px;color:#4ee2ff;margin-bottom:1rem;font-style:italic;">${data.headline}</div>
+          <div style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:0.5rem;">What needs to change</div>
+          ${coachingHTML}
+          ${data.max_offer && data.max_offer !== 'Not a price issue' ? `
+          <div style="background:rgba(78,226,255,0.05);border:0.5px solid rgba(78,226,255,0.2);border-radius:8px;padding:0.75rem;margin-top:0.75rem;">
+            <div style="font-size:11px;font-weight:500;color:#4ee2ff;margin-bottom:4px;">Max offer suggestion</div>
+            <div style="font-size:13px;color:var(--white);">${data.max_offer}</div>
+          </div>` : ''}
+          <div style="margin-top:1rem;padding-top:1rem;border-top:0.5px solid var(--border);">
+            <div style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:4px;">Bottom line</div>
+            <div style="font-size:13px;color:var(--white);">${data.bottom_line}</div>
+          </div>
+          <button class="btn-analyze" onclick="this.closest('[style*=fixed]').remove(); sendToAnalyzer('${leadId}');" style="margin-top:1rem;width:100%;">Open in Deal Analyzer →</button>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      liStatus('');
+    } catch(err) {
+      liStatus('⚠ Coaching failed: ' + err.message);
+      console.error('coachNearMiss error', err);
+    }
   }
 
   function sendToAnalyzer(leadId) {
