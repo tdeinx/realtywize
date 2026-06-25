@@ -2179,70 +2179,123 @@
       <!-- ============ DEAL FINDER VIEW ============ -->
       <div class="view" id="view-deal-finder">
 
-        <div class="df-header">
-          <div>
-            <h2 class="df-title">Deal Finder · Hunt off-market opportunities.</h2>
-            <p class="df-sub">Search in plain English to find AI-ranked distressed properties and generate drafted outreach in seconds. (Reviewing demo dataset)</p>
-          </div>
-          <div class="df-badge">DEMO DATA</div>
+        <div class="tool-panel-header">
+          <h2>Lead Importer · Bring your leads in, find your best deals.</h2>
+          <p>Import a CSV from BatchLeads, PropStream, DealMachine, or any data provider. Realtywize normalizes your data, scores every lead against your buy box, and surfaces the ones worth running numbers on. Address is optional.</p>
         </div>
 
-        <!-- Search Bar -->
-        <div class="df-search-card">
-          <div class="df-search-row">
-            <input type="text" id="df-search-input" class="df-search-input"
-              placeholder='Search in plain English — e.g. "absentee landlords in 28206 with 30%+ equity"'>
-            <button class="btn-analyze df-search-btn" onclick="runDealSearch()" id="df-search-btn">Search Deals →</button>
-          </div>
-
-          <div class="df-filters">
-            <div class="df-filter-label">Quick filters:</div>
-            <button class="df-chip" data-filter="pre-foreclosure">🔴 Pre-foreclosure</button>
-            <button class="df-chip" data-filter="absentee">🟡 Absentee Owners</button>
-            <button class="df-chip" data-filter="tax-delinquent">🟠 Tax Delinquent</button>
-            <button class="df-chip" data-filter="high-equity">🟢 High Equity</button>
-            <button class="df-chip" data-filter="probate">🟣 Probate</button>
-            <button class="df-chip" data-filter="expired">⚪ Expired Listings</button>
-          </div>
-
-          <div id="df-search-status" class="df-status"></div>
+        <!-- Upload zone -->
+        <div class="work-card" id="li-upload-zone" style="text-align:center; padding:2rem 1.5rem; border:1.5px dashed var(--border); border-radius:12px; margin-bottom:1rem; cursor:pointer;" onclick="document.getElementById('li-file-input').click()">
+          <div style="font-size:2rem; margin-bottom:0.5rem;">📂</div>
+          <div style="font-size:15px; font-weight:500; color:var(--white); margin-bottom:0.25rem;">Drop your CSV here or click to upload</div>
+          <div style="font-size:12px; color:var(--text-muted);">Supports BatchLeads, PropStream, DealMachine exports — or any CSV with property/lead data. Address not required.</div>
+          <input type="file" id="li-file-input" accept=".csv" style="display:none" onchange="handleLeadCSV(event)">
         </div>
 
-        <!-- Results Table -->
-        <div class="df-results-card">
-          <div class="df-results-header">
+        <!-- Manual add + controls -->
+        <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:1rem; flex-wrap:wrap;">
+          <button class="btn-analyze" style="flex:none;" onclick="showManualLeadForm()">+ Add Lead Manually</button>
+          <button class="sample-btn" onclick="loadSampleLeads()">Load Sample Data</button>
+          <span style="font-size:12px; color:var(--text-muted); margin-left:auto;" id="li-lead-count"></span>
+          <button class="sample-btn" id="li-score-btn" onclick="scoreAllLeads()" style="display:none;">🎯 Score Against Buy Box</button>
+          <button class="sample-btn" onclick="clearAllLeads()" id="li-clear-btn" style="display:none; color:#ff6b6b;">Clear All</button>
+        </div>
+
+        <!-- Status bar -->
+        <div id="li-status" style="font-size:13px; color:#4ee2ff; margin-bottom:0.75rem; min-height:1.2em;"></div>
+
+        <!-- Manual lead form (hidden until triggered) -->
+        <div id="li-manual-form" class="work-card" style="display:none; margin-bottom:1rem;">
+          <div class="card-label">Add Lead Manually</div>
+          <div class="input-row">
             <div>
-              <h3 class="df-results-title">Results</h3>
-              <span class="df-results-count" id="df-results-count">25 properties</span>
+              <label>Address (optional)</label>
+              <input type="text" id="lm-address" placeholder="e.g. 123 Main St">
             </div>
-            <div class="df-results-sort">
-              <label>Sort:</label>
-              <select id="df-sort" onchange="renderResults()">
-                <option value="score">AI Opportunity Score</option>
-                <option value="equity">Highest Equity</option>
-                <option value="years">Years Owned (desc)</option>
-                <option value="value">Estimated Value</option>
-              </select>
+            <div>
+              <label>City</label>
+              <input type="text" id="lm-city" placeholder="Charlotte">
             </div>
           </div>
+          <div class="input-row">
+            <div>
+              <label>State</label>
+              <input type="text" id="lm-state" placeholder="NC" maxlength="2">
+            </div>
+            <div>
+              <label>Zip</label>
+              <input type="text" id="lm-zip" placeholder="28206" maxlength="5">
+            </div>
+          </div>
+          <div class="input-row">
+            <div>
+              <label>Estimated Value</label>
+              <input type="number" id="lm-value" placeholder="180000">
+            </div>
+            <div>
+              <label>Equity %</label>
+              <input type="number" id="lm-equity" placeholder="45" min="0" max="100">
+            </div>
+          </div>
+          <div class="input-row">
+            <div>
+              <label>Owner Name (optional)</label>
+              <input type="text" id="lm-owner" placeholder="John Smith">
+            </div>
+            <div>
+              <label>Years Owned (optional)</label>
+              <input type="number" id="lm-years" placeholder="12">
+            </div>
+          </div>
+          <label>Signals</label>
+          <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:0.75rem;">
+            <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;"><input type="checkbox" id="lm-sig-absentee"> Absentee</label>
+            <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;"><input type="checkbox" id="lm-sig-foreclosure"> Pre-foreclosure</label>
+            <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;"><input type="checkbox" id="lm-sig-tax"> Tax Delinquent</label>
+            <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;"><input type="checkbox" id="lm-sig-probate"> Probate</label>
+            <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;"><input type="checkbox" id="lm-sig-vacant"> Vacant</label>
+            <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;"><input type="checkbox" id="lm-sig-equity"> High Equity</label>
+          </div>
+          <div style="display:flex; gap:0.75rem;">
+            <button class="btn-analyze" onclick="addManualLead()">Add Lead →</button>
+            <button class="sample-btn" onclick="hideManualLeadForm()">Cancel</button>
+          </div>
+        </div>
 
-          <div class="df-table-wrap">
-            <table class="df-table">
-              <thead>
-                <tr>
-                  <th>Address</th>
-                  <th>Signals</th>
-                  <th>Est. Value</th>
-                  <th>Equity</th>
-                  <th>Owner</th>
-                  <th>Score</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="df-table-body">
-                <!-- populated by JS -->
-              </tbody>
-            </table>
+        <!-- Leads table -->
+        <div id="li-table-wrap" style="display:none;">
+          <div class="df-results-card">
+            <div class="df-results-header">
+              <div>
+                <h3 class="df-results-title">Imported Leads</h3>
+                <span class="df-results-count" id="li-results-count"></span>
+              </div>
+              <div class="df-results-sort">
+                <label>Filter:</label>
+                <select id="li-filter" onchange="renderLeadTable()">
+                  <option value="all">All Leads</option>
+                  <option value="strong">Strong Match</option>
+                  <option value="near">Near Miss</option>
+                  <option value="out">Out of Criteria</option>
+                  <option value="unscored">Not Yet Scored</option>
+                </select>
+              </div>
+            </div>
+            <div class="df-table-wrap">
+              <table class="df-table">
+                <thead>
+                  <tr>
+                    <th>Property</th>
+                    <th>Signals</th>
+                    <th>Est. Value</th>
+                    <th>Equity</th>
+                    <th>Buy Box</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="li-table-body"></tbody>
+              </table>
+            </div>
           </div>
         </div>
 
@@ -2868,6 +2921,7 @@
     'analytics': 'Analytics',
     'ai-tools': 'AI Assistant',
     'buy-box': 'Buy Box',
+    'deal-finder': 'Lead Importer',
     'settings': 'Settings',
     'admin-users': 'User Management'
   };
@@ -2898,6 +2952,7 @@
     if (view === 'dashboard') updateDashboardKPIs();
     if (view === 'admin-users') fetchAdminUsers();
     if (view === 'buy-box') loadBuyBox();
+    if (view === 'deal-finder') { liLoad(); liUpdateCounts(); renderLeadTable(); }
 
     applyFeatureFlags();
   }
@@ -3945,6 +4000,322 @@ Return ONLY the JSON object.`;
         <div style="margin-top:0.5rem; color:var(--text-muted); font-size:11px;">Saved ${bb.savedAt}</div>
       </div>
     `;
+  }
+
+  // ============================================================
+  // ============ LEAD IMPORTER =================================
+  // ============================================================
+
+  let liLeads = [];
+
+  function liSave() {
+    try { localStorage.setItem('rw_leads', JSON.stringify(liLeads)); } catch(e) {}
+  }
+
+  function liLoad() {
+    try {
+      const raw = localStorage.getItem('rw_leads');
+      if (raw) liLeads = JSON.parse(raw);
+    } catch(e) { liLeads = []; }
+  }
+
+  function liStatus(msg) {
+    const el = document.getElementById('li-status');
+    if (el) el.textContent = msg;
+  }
+
+  function liUpdateCounts() {
+    const count = liLeads.length;
+    const countEl = document.getElementById('li-lead-count');
+    const scoreBtn = document.getElementById('li-score-btn');
+    const clearBtn = document.getElementById('li-clear-btn');
+    const tableWrap = document.getElementById('li-table-wrap');
+    if (countEl) countEl.textContent = count > 0 ? count + ' leads loaded' : '';
+    if (scoreBtn) scoreBtn.style.display = count > 0 ? 'inline-block' : 'none';
+    if (clearBtn) clearBtn.style.display = count > 0 ? 'inline-block' : 'none';
+    if (tableWrap) tableWrap.style.display = count > 0 ? 'block' : 'none';
+    const resultsCount = document.getElementById('li-results-count');
+    if (resultsCount) resultsCount.textContent = count + ' leads';
+  }
+
+  // CSV column name normalizer — maps common provider field names to internal schema
+  function normalizeCSVRow(row) {
+    const get = (...keys) => {
+      for (const k of keys) {
+        const found = Object.keys(row).find(h => h.toLowerCase().replace(/[\s_\-]/g,'') === k.toLowerCase().replace(/[\s_\-]/g,''));
+        if (found && row[found] !== undefined && row[found] !== '') return row[found];
+      }
+      return '';
+    };
+
+    const equityRaw = get('equitypercent','equity%','equitypct','estimatedequitypercent','equity');
+    const valueRaw  = get('estimatedvalue','estimatedmarketvalue','value','arvvalue','arv','price','listprice','assessedvalue');
+    const equityVal = parseFloat(equityRaw) || 0;
+    const valueVal  = parseFloat(String(valueRaw).replace(/[$,]/g,'')) || 0;
+
+    const signals = [];
+    const absentee = get('absenteeowner','absentee','owneroccupied');
+    if (absentee && !['yes','true','1','owner occupied'].includes(String(absentee).toLowerCase())) signals.push('absentee');
+    const foreclosure = get('foreclosure','preforeclosure','nodfiled','nod');
+    if (foreclosure && ['yes','true','1','x'].includes(String(foreclosure).toLowerCase())) signals.push('foreclosure');
+    const tax = get('taxdelinquent','taxlien','delinquent');
+    if (tax && ['yes','true','1','x'].includes(String(tax).toLowerCase())) signals.push('tax');
+    const probate = get('probate','estateof');
+    if (probate && ['yes','true','1','x'].includes(String(probate).toLowerCase())) signals.push('probate');
+    const vacant = get('vacant','vacancy','vacantproperty');
+    if (vacant && ['yes','true','1','x'].includes(String(vacant).toLowerCase())) signals.push('vacant');
+    if (equityVal >= 40) signals.push('equity');
+
+    return {
+      id: 'lead_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
+      address:    get('propertyaddress','address','streetaddress','siteaddress') || '',
+      city:       get('propertycity','city','sitecity') || '',
+      state:      get('propertystate','state','sitestate') || '',
+      zip:        get('propertyzip','zip','zipcode','sitezip') || '',
+      value:      valueVal,
+      equityPct:  equityVal,
+      owner:      get('ownername','owner','fullname','name') || '',
+      yearsOwned: parseInt(get('yearsowned','ownedyears','holdingperiod')) || 0,
+      beds:       parseInt(get('bedrooms','beds','br')) || 0,
+      baths:      parseFloat(get('bathrooms','baths','ba')) || 0,
+      sqft:       parseInt(get('squarefeet','sqft','livingarea','buildingsqft')) || 0,
+      signals,
+      buyBoxScore: null,
+      buyBoxLabel: null,
+      source: 'csv'
+    };
+  }
+
+  function parseCSV(text) {
+    const lines = text.trim().split(/\r?\n/);
+    if (lines.length < 2) return [];
+    const headers = lines[0].split(',').map(h => h.replace(/^"|"$/g,'').trim());
+    const rows = [];
+    for (let i = 1; i < lines.length; i++) {
+      const vals = lines[i].match(/(".*?"|[^,]+|(?<=,)(?=,)|(?<=,)$|^(?=,))/g) || lines[i].split(',');
+      const row = {};
+      headers.forEach((h, idx) => {
+        row[h] = (vals[idx] || '').replace(/^"|"$/g,'').trim();
+      });
+      rows.push(row);
+    }
+    return rows;
+  }
+
+  function handleLeadCSV(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    liStatus('Reading ' + file.name + '...');
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const rows = parseCSV(e.target.result);
+        if (rows.length === 0) { liStatus('No data rows found in CSV.'); return; }
+        const newLeads = rows.map(normalizeCSVRow).filter(l => l.value > 0 || l.address);
+        liLeads = [...liLeads, ...newLeads];
+        liSave();
+        liUpdateCounts();
+        renderLeadTable();
+        liStatus('✓ Imported ' + newLeads.length + ' leads from ' + file.name + '. ' + (rows.length - newLeads.length) + ' rows skipped (no value or address).');
+      } catch(err) {
+        liStatus('Error reading CSV: ' + err.message);
+        console.error('CSV parse error', err);
+      }
+      event.target.value = '';
+    };
+    reader.readAsText(file);
+  }
+
+  function showManualLeadForm() {
+    const form = document.getElementById('li-manual-form');
+    if (form) form.style.display = 'block';
+  }
+
+  function hideManualLeadForm() {
+    const form = document.getElementById('li-manual-form');
+    if (form) form.style.display = 'none';
+    ['lm-address','lm-city','lm-state','lm-zip','lm-value','lm-equity','lm-owner','lm-years'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    ['lm-sig-absentee','lm-sig-foreclosure','lm-sig-tax','lm-sig-probate','lm-sig-vacant','lm-sig-equity'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.checked = false;
+    });
+  }
+
+  function addManualLead() {
+    const value = parseFloat(document.getElementById('lm-value').value) || 0;
+    const address = document.getElementById('lm-address').value.trim();
+    if (!value && !address) {
+      liStatus('Please enter at least an estimated value or address.');
+      return;
+    }
+    const signals = ['absentee','foreclosure','tax','probate','vacant','equity']
+      .filter(s => document.getElementById('lm-sig-'+s)?.checked);
+    const equityPct = parseFloat(document.getElementById('lm-equity').value) || 0;
+    if (equityPct >= 40 && !signals.includes('equity')) signals.push('equity');
+
+    liLeads.push({
+      id: 'lead_' + Date.now(),
+      address,
+      city:       document.getElementById('lm-city').value.trim(),
+      state:      document.getElementById('lm-state').value.trim(),
+      zip:        document.getElementById('lm-zip').value.trim(),
+      value,
+      equityPct,
+      owner:      document.getElementById('lm-owner').value.trim(),
+      yearsOwned: parseInt(document.getElementById('lm-years').value) || 0,
+      beds: 0, baths: 0, sqft: 0,
+      signals,
+      buyBoxScore: null,
+      buyBoxLabel: null,
+      source: 'manual'
+    });
+
+    liSave();
+    liUpdateCounts();
+    renderLeadTable();
+    hideManualLeadForm();
+    liStatus('✓ Lead added.');
+  }
+
+  function loadSampleLeads() {
+    const samples = [
+      { id:'s1', address:'1842 Edgewater Dr', city:'Orlando', state:'FL', zip:'32804', value:385000, equityPct:62, owner:'Patricia Holcomb', yearsOwned:18, beds:3, baths:2, sqft:1640, signals:['absentee','equity'], buyBoxScore:null, buyBoxLabel:null, source:'sample' },
+      { id:'s2', address:'', city:'Tampa', state:'FL', zip:'33602', value:298000, equityPct:88, owner:'Estate of Walter Reeves', yearsOwned:31, beds:2, baths:1, sqft:1180, signals:['probate','equity'], buyBoxScore:null, buyBoxLabel:null, source:'sample' },
+      { id:'s3', address:'3155 SW 18th Ave', city:'Miami', state:'FL', zip:'33145', value:612000, equityPct:34, owner:'Marcus Torres', yearsOwned:9, beds:3, baths:2, sqft:1820, signals:['foreclosure'], buyBoxScore:null, buyBoxLabel:null, source:'sample' },
+      { id:'s4', address:'', city:'Jacksonville', state:'FL', zip:'32207', value:225000, equityPct:71, owner:'Ronald Pickett', yearsOwned:22, beds:3, baths:1, sqft:1380, signals:['absentee','tax','equity'], buyBoxScore:null, buyBoxLabel:null, source:'sample' },
+      { id:'s5', address:'5601 N Habana Ave', city:'Tampa', state:'FL', zip:'33614', value:340000, equityPct:55, owner:'Sergei Volkov', yearsOwned:14, beds:4, baths:2, sqft:1990, signals:['absentee','equity','vacant'], buyBoxScore:null, buyBoxLabel:null, source:'sample' },
+    ];
+    liLeads = [...liLeads, ...samples];
+    liSave();
+    liUpdateCounts();
+    renderLeadTable();
+    liStatus('✓ Sample leads loaded. Note: 2 leads have no address — that\'s intentional.');
+  }
+
+  function clearAllLeads() {
+    if (!confirm('Clear all imported leads? This cannot be undone.')) return;
+    liLeads = [];
+    liSave();
+    liUpdateCounts();
+    renderLeadTable();
+    liStatus('All leads cleared.');
+  }
+
+  // NOTE: SIGNAL_LABELS const exists earlier in the file (Deal Finder code).
+  // The Lead Importer's renderLeadTable() reuses it. A duplicate const here
+  // would throw "Identifier already declared" and break the script.
+
+  function renderLeadTable() {
+    const tbody = document.getElementById('li-table-body');
+    if (!tbody) return;
+    const filter = document.getElementById('li-filter')?.value || 'all';
+    const filtered = liLeads.filter(l => {
+      if (filter === 'all') return true;
+      if (filter === 'unscored') return l.buyBoxLabel === null;
+      return l.buyBoxLabel === filter;
+    });
+    const resultsCount = document.getElementById('li-results-count');
+    if (resultsCount) resultsCount.textContent = filtered.length + ' of ' + liLeads.length + ' leads';
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:2rem; color:var(--text-muted);">No leads match this filter.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = filtered.map(lead => {
+      const label = lead.address
+        ? `${lead.address}${lead.city ? ', ' + lead.city : ''}${lead.state ? ' ' + lead.state : ''}`
+        : `${lead.city || ''}${lead.state ? ' ' + lead.state : ''}${lead.zip ? ' ' + lead.zip : ''} — no address`;
+      const signalBadges = (lead.signals || []).map(s => {
+        const info = SIGNAL_LABELS[s] || { label: s, cls: 'equity' };
+        return `<span class="df-signal ${info.cls}">${info.label}</span>`;
+      }).join('');
+      const valueFmt = lead.value ? '$' + lead.value.toLocaleString() : '—';
+      const equityFmt = lead.equityPct ? lead.equityPct + '%' : '—';
+      let bbBadge = '<span style="color:var(--text-muted);font-size:12px;">Not scored</span>';
+      if (lead.buyBoxLabel === 'strong') bbBadge = '<span style="color:#4ee2ff;font-size:12px;font-weight:500;">✓ Strong Match</span>';
+      else if (lead.buyBoxLabel === 'near') bbBadge = '<span style="color:#ffc107;font-size:12px;font-weight:500;">~ Near Miss</span>';
+      else if (lead.buyBoxLabel === 'out') bbBadge = '<span style="color:#888;font-size:12px;">✗ Out</span>';
+
+      return `<tr>
+        <td style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${label}">${label}</td>
+        <td>${signalBadges || '<span style="color:var(--text-muted);font-size:12px;">None</span>'}</td>
+        <td>${valueFmt}</td>
+        <td>${equityFmt}</td>
+        <td>${bbBadge}</td>
+        <td>
+          <button class="sample-btn" onclick="sendToAnalyzer('${lead.id}')" style="font-size:11px;">Analyze →</button>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  function scoreAllLeads() {
+    const raw = localStorage.getItem('rw_buy_box');
+    if (!raw) {
+      liStatus('⚠ No buy box saved yet. Set your criteria in the Buy Box tab first.');
+      return;
+    }
+    const bb = JSON.parse(raw);
+    let strong = 0, near = 0, out = 0;
+
+    liLeads = liLeads.map(lead => {
+      const failures = [];
+      const nearMisses = [];
+
+      if (bb.maxPrice && lead.value > 0 && lead.value > bb.maxPrice) {
+        const overBy = lead.value - bb.maxPrice;
+        if (overBy / bb.maxPrice > 0.15) failures.push('over max price');
+        else nearMisses.push('slightly over max price ($' + Math.round(overBy).toLocaleString() + ' over)');
+      }
+      if (bb.minEquity && lead.equityPct > 0 && lead.equityPct < bb.minEquity) {
+        const shortBy = bb.minEquity - lead.equityPct;
+        if (shortBy > 10) failures.push('equity too low');
+        else nearMisses.push('equity ' + shortBy.toFixed(0) + '% below minimum');
+      }
+      if (bb.signals && bb.signals.length > 0) {
+        const hasSignal = (lead.signals || []).some(s => bb.signals.includes(s));
+        if (!hasSignal) nearMisses.push('no priority signals');
+      }
+
+      let label, score;
+      if (failures.length === 0 && nearMisses.length === 0) {
+        label = 'strong'; score = 90; strong++;
+      } else if (failures.length === 0 && nearMisses.length > 0) {
+        label = 'near'; score = 60; near++;
+      } else {
+        label = 'out'; score = 20; out++;
+      }
+
+      return { ...lead, buyBoxLabel: label, buyBoxScore: score, buyBoxNotes: [...failures, ...nearMisses] };
+    });
+
+    liSave();
+    renderLeadTable();
+    liStatus(`✓ Scored ${liLeads.length} leads — ${strong} strong matches, ${near} near misses, ${out} out of criteria.`);
+  }
+
+  function sendToAnalyzer(leadId) {
+    const lead = liLeads.find(l => l.id === leadId);
+    if (!lead) return;
+    // Pre-populate Deal Analyzer fields with lead data
+    const addressEl = document.getElementById('inv-address');
+    const priceEl   = document.getElementById('inv-price');
+    if (addressEl) addressEl.value = [lead.address, lead.city, lead.state, lead.zip].filter(Boolean).join(', ');
+    if (priceEl && lead.value) priceEl.value = lead.value;
+    // Switch to Deal Analyzer view
+    switchView('ai-tools');
+    // Activate the investor tab
+    document.querySelectorAll('.tool-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tool-panel').forEach(p => p.classList.remove('active'));
+    const invTab = document.querySelector('.tool-tab[data-tool="investor"]');
+    const invPanel = document.getElementById('tool-investor');
+    if (invTab) invTab.classList.add('active');
+    if (invPanel) invPanel.classList.add('active');
+    liStatus('Lead sent to Deal Analyzer — finish entering the numbers and click Analyze.');
   }
 
   function money(n) { return "$" + n.toLocaleString(); }
