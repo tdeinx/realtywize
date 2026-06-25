@@ -1652,6 +1652,7 @@
       <button class="sb-item" data-view="leads"><span class="sb-icon">👥</span> Leads</button>
       <button class="sb-item" data-view="tasks"><span class="sb-icon">✓</span> Tasks</button>
       <button class="sb-item" data-view="deal-finder"><span class="sb-icon">🎯</span> Lead Importer</button>
+      <button class="sb-item" data-view="buy-box"><span class="sb-icon">🎯</span> Buy Box</button>
       <button class="sb-item" data-view="ai-tools"><span class="sb-icon">🤖</span> Deal Analyzer</button>
       <button class="sb-item" data-view="settings"><span class="sb-icon">⚙️</span> Settings</button>
 
@@ -2247,6 +2248,99 @@
 
       </div>
 
+      <!-- ============ BUY BOX VIEW ============ -->
+      <div class="view" id="view-buy-box">
+
+        <div class="tool-panel-header">
+          <h2>Buy Box · Set your criteria once, score every lead automatically.</h2>
+          <p>Define exactly what a good deal looks like for you. Every lead you import gets scored against this profile — strong matches surface to the top, near-misses tell you what needs to change.</p>
+        </div>
+
+        <div class="work-grid">
+
+          <div class="work-card">
+            <div class="card-label">Your Criteria</div>
+
+            <label>Target Markets (cities, states, or zip codes)</label>
+            <input type="text" id="bb-markets" placeholder="e.g. Charlotte NC, Atlanta GA, 28206">
+
+            <label style="margin-top:0.75rem;">Property Types</label>
+            <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:0.75rem;">
+              <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;"><input type="checkbox" id="bb-sfr" value="sfr"> Single Family</label>
+              <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;"><input type="checkbox" id="bb-duplex" value="duplex"> Duplex</label>
+              <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;"><input type="checkbox" id="bb-small-mf" value="small-mf"> Small Multifamily (3–4 units)</label>
+              <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;"><input type="checkbox" id="bb-mobile" value="mobile"> Mobile Home</label>
+              <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;"><input type="checkbox" id="bb-commercial" value="commercial"> Small Commercial</label>
+            </div>
+
+            <div class="input-row">
+              <div>
+                <label>Max Purchase Price</label>
+                <input type="number" id="bb-max-price" placeholder="250000">
+              </div>
+              <div>
+                <label>Min Purchase Price (optional)</label>
+                <input type="number" id="bb-min-price" placeholder="50000">
+              </div>
+            </div>
+
+            <div class="input-row">
+              <div>
+                <label>Min Cash-on-Cash Return %</label>
+                <input type="number" id="bb-min-coc" placeholder="8" step="0.5">
+              </div>
+              <div>
+                <label>Min Equity % (of value)</label>
+                <input type="number" id="bb-min-equity" placeholder="20" step="1">
+              </div>
+            </div>
+
+            <div class="input-row">
+              <div>
+                <label>Max Rehab Budget</label>
+                <input type="number" id="bb-max-rehab" placeholder="50000">
+              </div>
+              <div>
+                <label>Min ARV Spread % (for flips)</label>
+                <input type="number" id="bb-min-arv-spread" placeholder="25" step="1">
+              </div>
+            </div>
+
+            <label style="margin-top:0.75rem;">Preferred Exit Strategies</label>
+            <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:0.75rem;">
+              <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;"><input type="checkbox" id="bb-exit-hold" value="hold"> Buy &amp; Hold</label>
+              <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;"><input type="checkbox" id="bb-exit-flip" value="flip"> Fix &amp; Flip</label>
+              <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;"><input type="checkbox" id="bb-exit-brrrr" value="brrrr"> BRRRR</label>
+              <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;"><input type="checkbox" id="bb-exit-wholesale" value="wholesale"> Wholesale</label>
+            </div>
+
+            <label>Lead Signals to Prioritize (optional)</label>
+            <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:1rem;">
+              <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;"><input type="checkbox" id="bb-sig-absentee" value="absentee"> Absentee Owner</label>
+              <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;"><input type="checkbox" id="bb-sig-foreclosure" value="foreclosure"> Pre-foreclosure</label>
+              <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;"><input type="checkbox" id="bb-sig-tax" value="tax"> Tax Delinquent</label>
+              <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;"><input type="checkbox" id="bb-sig-probate" value="probate"> Probate</label>
+              <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;"><input type="checkbox" id="bb-sig-vacant" value="vacant"> Vacant</label>
+              <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;"><input type="checkbox" id="bb-sig-highequity" value="equity"> High Equity</label>
+            </div>
+
+            <button class="btn-analyze" onclick="saveBuyBox()">Save Buy Box →</button>
+            <div id="bb-saved-msg" style="display:none; color:#4ee2ff; font-size:13px; margin-top:0.5rem;">✓ Buy box saved.</div>
+          </div>
+
+          <div class="work-card">
+            <div class="card-label">Your Current Buy Box</div>
+            <div id="bb-summary">
+              <div class="result-placeholder">
+                <div class="icon">🎯</div>
+                <p>Fill in your criteria and save<br>to see your buy box summary here.</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
       <!-- ============ DEAL FINDER DETAIL DRAWER ============ -->
       <div class="df-drawer-backdrop" id="df-drawer-backdrop" onclick="closeDrawer()"></div>
       <aside class="df-drawer" id="df-drawer">
@@ -2773,6 +2867,7 @@
     'marketing': 'Marketing',
     'analytics': 'Analytics',
     'ai-tools': 'AI Assistant',
+    'buy-box': 'Buy Box',
     'settings': 'Settings',
     'admin-users': 'User Management'
   };
@@ -2802,6 +2897,7 @@
     if (view === 'settings') loadSettingsForm();
     if (view === 'dashboard') updateDashboardKPIs();
     if (view === 'admin-users') fetchAdminUsers();
+    if (view === 'buy-box') loadBuyBox();
 
     applyFeatureFlags();
   }
@@ -3770,6 +3866,86 @@ Return ONLY the JSON object.`;
     scores: {},
     outreachCache: {}
   };
+
+  function saveBuyBox() {
+    const propTypes = ['sfr','duplex','small-mf','mobile','commercial']
+      .filter(v => document.getElementById('bb-'+v)?.checked);
+    const exitStrats = ['hold','flip','brrrr','wholesale']
+      .filter(v => document.getElementById('bb-exit-'+v)?.checked);
+    const signals = ['absentee','foreclosure','tax','probate','vacant','equity']
+      .filter(v => document.getElementById('bb-sig-'+v)?.checked);
+
+    const bb = {
+      markets:      document.getElementById('bb-markets').value.trim(),
+      propTypes,
+      minPrice:     parseFloat(document.getElementById('bb-min-price').value) || 0,
+      maxPrice:     parseFloat(document.getElementById('bb-max-price').value) || 0,
+      minCoC:       parseFloat(document.getElementById('bb-min-coc').value) || 0,
+      minEquity:    parseFloat(document.getElementById('bb-min-equity').value) || 0,
+      maxRehab:     parseFloat(document.getElementById('bb-max-rehab').value) || 0,
+      minArvSpread: parseFloat(document.getElementById('bb-min-arv-spread').value) || 0,
+      exitStrats,
+      signals,
+      savedAt:      new Date().toLocaleString()
+    };
+
+    localStorage.setItem('rw_buy_box', JSON.stringify(bb));
+
+    document.getElementById('bb-saved-msg').style.display = 'block';
+    setTimeout(() => {
+      document.getElementById('bb-saved-msg').style.display = 'none';
+    }, 3000);
+
+    renderBuyBoxSummary(bb);
+  }
+
+  function loadBuyBox() {
+    const raw = localStorage.getItem('rw_buy_box');
+    if (!raw) return;
+    try {
+      const bb = JSON.parse(raw);
+      if (bb.markets) document.getElementById('bb-markets').value = bb.markets;
+      if (bb.minPrice) document.getElementById('bb-min-price').value = bb.minPrice;
+      if (bb.maxPrice) document.getElementById('bb-max-price').value = bb.maxPrice;
+      if (bb.minCoC) document.getElementById('bb-min-coc').value = bb.minCoC;
+      if (bb.minEquity) document.getElementById('bb-min-equity').value = bb.minEquity;
+      if (bb.maxRehab) document.getElementById('bb-max-rehab').value = bb.maxRehab;
+      if (bb.minArvSpread) document.getElementById('bb-min-arv-spread').value = bb.minArvSpread;
+      (bb.propTypes || []).forEach(v => {
+        const el = document.getElementById('bb-'+v);
+        if (el) el.checked = true;
+      });
+      (bb.exitStrats || []).forEach(v => {
+        const el = document.getElementById('bb-exit-'+v);
+        if (el) el.checked = true;
+      });
+      (bb.signals || []).forEach(v => {
+        const el = document.getElementById('bb-sig-'+v);
+        if (el) el.checked = true;
+      });
+      renderBuyBoxSummary(bb);
+    } catch(e) { console.error('loadBuyBox error', e); }
+  }
+
+  function renderBuyBoxSummary(bb) {
+    const fmt = n => '$' + Number(n).toLocaleString();
+    const summary = document.getElementById('bb-summary');
+    if (!summary) return;
+    summary.innerHTML = `
+      <div style="font-size:13px; line-height:2;">
+        <div><span style="color:var(--text-muted)">Markets:</span> ${bb.markets || '—'}</div>
+        <div><span style="color:var(--text-muted)">Property types:</span> ${bb.propTypes.length ? bb.propTypes.join(', ') : '—'}</div>
+        <div><span style="color:var(--text-muted)">Price range:</span> ${bb.minPrice ? fmt(bb.minPrice) : 'Any'} – ${bb.maxPrice ? fmt(bb.maxPrice) : 'Any'}</div>
+        <div><span style="color:var(--text-muted)">Min CoC return:</span> ${bb.minCoC ? bb.minCoC + '%' : '—'}</div>
+        <div><span style="color:var(--text-muted)">Min equity:</span> ${bb.minEquity ? bb.minEquity + '%' : '—'}</div>
+        <div><span style="color:var(--text-muted)">Max rehab:</span> ${bb.maxRehab ? fmt(bb.maxRehab) : '—'}</div>
+        <div><span style="color:var(--text-muted)">Min ARV spread:</span> ${bb.minArvSpread ? bb.minArvSpread + '%' : '—'}</div>
+        <div><span style="color:var(--text-muted)">Exit strategies:</span> ${bb.exitStrats.length ? bb.exitStrats.join(', ') : '—'}</div>
+        <div><span style="color:var(--text-muted)">Priority signals:</span> ${bb.signals.length ? bb.signals.join(', ') : '—'}</div>
+        <div style="margin-top:0.5rem; color:var(--text-muted); font-size:11px;">Saved ${bb.savedAt}</div>
+      </div>
+    `;
+  }
 
   function money(n) { return "$" + n.toLocaleString(); }
 
