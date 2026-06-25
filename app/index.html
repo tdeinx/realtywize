@@ -1651,8 +1651,8 @@
       <button class="sb-item active" data-view="dashboard"><span class="sb-icon">🏠</span> Dashboard</button>
       <button class="sb-item" data-view="leads"><span class="sb-icon">👥</span> Leads</button>
       <button class="sb-item" data-view="tasks"><span class="sb-icon">✓</span> Tasks</button>
-      <button class="sb-item" data-view="deal-finder"><span class="sb-icon">🎯</span> Deal Finder</button>
-      <button class="sb-item" data-view="ai-tools"><span class="sb-icon">🤖</span> AI Assistant</button>
+      <button class="sb-item" data-view="deal-finder"><span class="sb-icon">🎯</span> Lead Importer</button>
+      <button class="sb-item" data-view="ai-tools"><span class="sb-icon">🤖</span> Deal Analyzer</button>
       <button class="sb-item" data-view="settings"><span class="sb-icon">⚙️</span> Settings</button>
 
       <div id="admin-nav" style="display: none;">
@@ -1940,13 +1940,13 @@
       <div class="view" id="view-ai-tools">
 
         <div class="tool-tabs">
-          <button class="tool-tab active" data-tool="scoring"><span>🎯</span> Lead Scoring</button>
+          <button class="tool-tab" data-tool="scoring"><span>🎯</span> Lead Scoring</button>
           <button class="tool-tab" data-tool="valuation"><span>🏠</span> Home Valuation</button>
-          <button class="tool-tab" data-tool="investor"><span>📊</span> Investor Screener</button>
+          <button class="tool-tab active" data-tool="investor"><span>📊</span> Deal Analyzer</button>
         </div>
 
         <!-- TOOL: LEAD SCORING -->
-        <div class="tool-panel active" id="tool-scoring">
+        <div class="tool-panel" id="tool-scoring">
           <div class="tool-panel-header">
             <h2>Lead Scoring · Score the lead, send the reply.</h2>
             <p>Paste any incoming inquiry — text, email, web form, DM. Realtywize classifies it, recommends an action, and drafts a personalized reply your agent can send in one click.</p>
@@ -2033,16 +2033,16 @@
         </div>
 
         <!-- TOOL: INVESTOR -->
-        <div class="tool-panel" id="tool-investor">
+        <div class="tool-panel active" id="tool-investor">
           <div class="tool-panel-header">
-            <h2>Investor Screener · Grade the deal, skip the bad ones.</h2>
-            <p>Drop in the numbers on any property. Realtywize grades it A through F across flip, BRRRR, and buy-and-hold strategies — with reasoning your team can actually act on.</p>
+            <h2>Deal Analyzer · Run the numbers before you move.</h2>
+            <p>Enter the deal numbers. Realtywize grades it A–F across flip, BRRRR, and buy-and-hold — with a recommendation your team can act on. Address is optional.</p>
           </div>
           <div class="work-grid">
 
             <div class="work-card">
               <div class="card-label">Step 1 — Deal Numbers</div>
-              <label>Property Address</label>
+              <label>Property Address (optional)</label>
               <input type="text" id="inv-address" placeholder="e.g. 812 N Brevard St, Charlotte NC 28206">
               <div class="input-row">
                 <div>
@@ -3408,8 +3408,8 @@ Provide a reasonable estimate based on general knowledge of the area and propert
     const errBox = document.getElementById('inv-error');
 
     errBox.innerHTML = '';
-    if (!address || !price || !arv) {
-      errBox.innerHTML = '<div class="error">Please fill in address, purchase price, and ARV.</div>';
+    if (!price || !arv) {
+      errBox.innerHTML = '<div class="error">Please fill in purchase price and ARV.</div>';
       return;
     }
 
@@ -3428,7 +3428,7 @@ Provide a reasonable estimate based on general knowledge of the area and propert
     const prompt = `You are Realtywize, an AI deal screener for real estate investors. Analyze this deal and grade it.
 
 DEAL:
-- Address: ${address}
+- Address: ${address || 'Not provided'}
 - Purchase Price: $${price.toLocaleString()}
 - Rehab Cost: $${rehab.toLocaleString()}
 - ARV (After Repair Value): $${arv.toLocaleString()}
