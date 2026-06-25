@@ -2042,47 +2042,130 @@
 
             <div class="work-card">
               <div class="card-label">Step 1 — Deal Numbers</div>
+
               <label>Property Address (optional)</label>
               <input type="text" id="inv-address" placeholder="e.g. 812 N Brevard St, Charlotte NC 28206">
+
+              <div class="card-label" style="margin-top:1rem;">Purchase &amp; Financing</div>
               <div class="input-row">
                 <div>
                   <label>Purchase Price</label>
-                  <input type="number" id="inv-price" placeholder="245000">
+                  <input type="number" id="inv-price" placeholder="150000">
                 </div>
                 <div>
-                  <label>Est. Rehab Cost</label>
-                  <input type="number" id="inv-rehab" placeholder="55000">
+                  <label>Down Payment %</label>
+                  <input type="number" id="inv-down-pct" placeholder="20" min="0" max="100">
                 </div>
               </div>
               <div class="input-row">
                 <div>
-                  <label>ARV (After Repair Value)</label>
-                  <input type="number" id="inv-arv" placeholder="385000">
+                  <label>Interest Rate %</label>
+                  <input type="number" id="inv-rate" placeholder="7.5" step="0.1">
                 </div>
                 <div>
-                  <label>Est. Monthly Rent</label>
-                  <input type="number" id="inv-rent" placeholder="2200">
+                  <label>Loan Term (years)</label>
+                  <input type="number" id="inv-term" placeholder="30">
                 </div>
               </div>
+              <div class="input-row">
+                <div>
+                  <label>Closing Costs</label>
+                  <input type="number" id="inv-closing" placeholder="3000">
+                </div>
+                <div>
+                  <label>Rehab Estimate (optional)</label>
+                  <input type="number" id="inv-rehab" placeholder="0">
+                </div>
+              </div>
+
+              <div class="card-label" style="margin-top:1rem;">Income</div>
+              <div class="input-row">
+                <div>
+                  <label>Unit 1 Rent/mo</label>
+                  <input type="number" id="inv-rent1" placeholder="1200">
+                </div>
+                <div>
+                  <label>Unit 2 Rent/mo (optional)</label>
+                  <input type="number" id="inv-rent2" placeholder="0">
+                </div>
+              </div>
+              <div class="input-row">
+                <div>
+                  <label>Unit 3 Rent/mo (optional)</label>
+                  <input type="number" id="inv-rent3" placeholder="0">
+                </div>
+                <div>
+                  <label>Unit 4 Rent/mo (optional)</label>
+                  <input type="number" id="inv-rent4" placeholder="0">
+                </div>
+              </div>
+
+              <div class="card-label" style="margin-top:1rem;">Expenses</div>
+              <div class="input-row">
+                <div>
+                  <label>Property Tax/yr</label>
+                  <input type="number" id="inv-tax" placeholder="2400">
+                </div>
+                <div>
+                  <label>Insurance/mo</label>
+                  <input type="number" id="inv-insurance" placeholder="100">
+                </div>
+              </div>
+              <div class="input-row">
+                <div>
+                  <label>Utilities/mo</label>
+                  <input type="number" id="inv-utilities" placeholder="0">
+                </div>
+                <div>
+                  <label>Mgmt % (of gross rents)</label>
+                  <input type="number" id="inv-mgmt-pct" placeholder="8" min="0" max="100">
+                </div>
+              </div>
+              <div class="input-row">
+                <div>
+                  <label>Vacancy % (of gross rents)</label>
+                  <input type="number" id="inv-vacancy-pct" placeholder="10" min="0" max="100">
+                </div>
+                <div>
+                  <label>Maintenance % (of gross rents)</label>
+                  <input type="number" id="inv-maint-pct" placeholder="10" min="0" max="100">
+                </div>
+              </div>
+
+              <div class="card-label" style="margin-top:1rem;">Exit / ARV</div>
+              <div class="input-row">
+                <div>
+                  <label>ARV — After Repair Value (optional)</label>
+                  <input type="number" id="inv-arv" placeholder="200000">
+                </div>
+                <div>
+                  <label>Appreciation Rate % / yr</label>
+                  <input type="number" id="inv-appreciation" placeholder="3.5" step="0.1">
+                </div>
+              </div>
+
               <label>Strategy Focus</label>
               <select id="inv-strategy">
                 <option value="all">All Strategies (compare)</option>
                 <option value="flip">Flip</option>
                 <option value="brrrr">BRRRR</option>
-                <option value="hold">Buy & Hold</option>
+                <option value="hold">Buy &amp; Hold</option>
+                <option value="wholesale">Wholesale</option>
               </select>
-              <label>Property Notes (optional)</label>
-              <textarea id="inv-notes" placeholder="Neighborhood condition, comps, structural concerns, etc." style="min-height: 80px;"></textarea>
-              <button class="btn-analyze" onclick="analyzeDeal()" id="inv-btn">Grade the Deal →</button>
+
+              <label style="margin-top:0.75rem;">Notes (optional)</label>
+              <textarea id="inv-notes" placeholder="Neighborhood condition, comps, structural concerns, seller motivation, etc." style="min-height:80px;"></textarea>
+
+              <button class="btn-analyze" onclick="analyzeDeal()" id="inv-btn">Analyze Deal →</button>
               <div id="inv-error"></div>
             </div>
 
             <div class="work-card">
-              <div class="card-label">Step 2 — Deal Analysis</div>
+              <div class="card-label">Step 2 — Full Analysis</div>
               <div id="inv-result">
                 <div class="result-placeholder">
                   <div class="icon">📊</div>
-                  <p>Deal grade and analysis will appear here<br>once numbers are submitted.</p>
+                  <p>Full deal analysis will appear here<br>once numbers are submitted.</p>
                 </div>
               </div>
             </div>
@@ -3396,73 +3479,155 @@ Provide a reasonable estimate based on general knowledge of the area and propert
 
   // ============ INVESTOR DEAL SCREENER ============
   async function analyzeDeal() {
-    const address = document.getElementById('inv-address').value.trim();
-    const price = parseFloat(document.getElementById('inv-price').value);
-    const rehab = parseFloat(document.getElementById('inv-rehab').value) || 0;
-    const arv = parseFloat(document.getElementById('inv-arv').value);
-    const rent = parseFloat(document.getElementById('inv-rent').value) || 0;
-    const strategy = document.getElementById('inv-strategy').value;
-    const notes = document.getElementById('inv-notes').value.trim();
-    const btn = document.getElementById('inv-btn');
-    const result = document.getElementById('inv-result');
-    const errBox = document.getElementById('inv-error');
+    const address     = document.getElementById('inv-address').value.trim();
+    const price       = parseFloat(document.getElementById('inv-price').value) || 0;
+    const downPct     = parseFloat(document.getElementById('inv-down-pct').value) || 20;
+    const rate        = parseFloat(document.getElementById('inv-rate').value) || 0;
+    const term        = parseFloat(document.getElementById('inv-term').value) || 30;
+    const closing     = parseFloat(document.getElementById('inv-closing').value) || 0;
+    const rehab       = parseFloat(document.getElementById('inv-rehab').value) || 0;
+    const rent1       = parseFloat(document.getElementById('inv-rent1').value) || 0;
+    const rent2       = parseFloat(document.getElementById('inv-rent2').value) || 0;
+    const rent3       = parseFloat(document.getElementById('inv-rent3').value) || 0;
+    const rent4       = parseFloat(document.getElementById('inv-rent4').value) || 0;
+    const taxYr       = parseFloat(document.getElementById('inv-tax').value) || 0;
+    const insurance   = parseFloat(document.getElementById('inv-insurance').value) || 0;
+    const utilities   = parseFloat(document.getElementById('inv-utilities').value) || 0;
+    const mgmtPct     = parseFloat(document.getElementById('inv-mgmt-pct').value) || 0;
+    const vacancyPct  = parseFloat(document.getElementById('inv-vacancy-pct').value) || 0;
+    const maintPct    = parseFloat(document.getElementById('inv-maint-pct').value) || 0;
+    const arv         = parseFloat(document.getElementById('inv-arv').value) || 0;
+    const appreciation= parseFloat(document.getElementById('inv-appreciation').value) || 3.5;
+    const strategy    = document.getElementById('inv-strategy').value;
+    const notes       = document.getElementById('inv-notes').value.trim();
+    const btn         = document.getElementById('inv-btn');
+    const result      = document.getElementById('inv-result');
+    const errBox      = document.getElementById('inv-error');
 
     errBox.innerHTML = '';
-    if (!price || !arv) {
-      errBox.innerHTML = '<div class="error">Please fill in purchase price and ARV.</div>';
+    if (!price) {
+      errBox.innerHTML = '<div class="error">Please enter a purchase price.</div>';
       return;
     }
 
+    // --- Core calculations ---
+    const downAmt       = price * (downPct / 100);
+    const loanAmt       = price - downAmt;
+    const totalCashIn   = downAmt + closing + rehab;
+    const grossRentsMo  = rent1 + rent2 + rent3 + rent4;
+    const grossRentsYr  = grossRentsMo * 12;
+
+    // Monthly mortgage (P&I)
+    let monthlyMortgage = 0;
+    if (rate > 0 && loanAmt > 0) {
+      const r = (rate / 100) / 12;
+      const n = term * 12;
+      monthlyMortgage = loanAmt * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+    }
+
+    // Monthly expenses
+    const mgmtMo      = grossRentsMo * (mgmtPct / 100);
+    const vacancyMo   = grossRentsMo * (vacancyPct / 100);
+    const maintMo     = grossRentsMo * (maintPct / 100);
+    const taxMo       = taxYr / 12;
+    const totalExpMo  = mgmtMo + vacancyMo + maintMo + taxMo + insurance + utilities;
+
+    // NOI & cash flow
+    const effectiveRentMo = grossRentsMo - vacancyMo;
+    const noiMo           = effectiveRentMo - (totalExpMo - vacancyMo);
+    const noiYr           = noiMo * 12;
+    const cashFlowMo      = noiMo - monthlyMortgage;
+    const cashFlowYr      = cashFlowMo * 12;
+
+    // Returns
+    const capRate     = price > 0 ? (noiYr / price) * 100 : 0;
+    const cocReturn   = totalCashIn > 0 ? (cashFlowYr / totalCashIn) * 100 : 0;
+    const dcrValue    = monthlyMortgage > 0 ? noiMo / monthlyMortgage : 0;
+
+    // 70% rule
+    const maxOffer70  = arv > 0 ? (arv * 0.7) - rehab : 0;
+    const meets70     = arv > 0 && price <= maxOffer70;
+
+    // Flip metrics
+    const totalInvested   = price + rehab;
+    const grossProfit     = arv > 0 ? arv - totalInvested : 0;
+    const grossMargin     = arv > 0 ? (grossProfit / arv) * 100 : 0;
+
+    // 5-year appreciation
+    const yr1Value = price * (1 + appreciation / 100);
+    const yr5Value = price * Math.pow(1 + appreciation / 100, 5);
+    const yr1Gain  = yr1Value - price;
+    const yr5Gain  = yr5Value - price;
+
+    const fmt = n => '$' + Math.round(n).toLocaleString();
+    const pct = n => n.toFixed(1) + '%';
+
     btn.disabled = true;
-    btn.innerHTML = 'Grading...';
-    result.innerHTML = '<div class="loading"><div class="spinner"></div><p>Realtywize is running the numbers...</p></div>';
+    btn.innerHTML = 'Analyzing...';
+    result.innerHTML = '<div class="loading"><div class="spinner"></div><p>Running the numbers...</p></div>';
 
-    const totalInvested = price + rehab;
-    const grossProfit = arv - totalInvested;
-    const grossMargin = (grossProfit / arv) * 100;
-    const annualRent = rent * 12;
-    const grossYield = (annualRent / totalInvested) * 100;
-    const sevenPercentRule = arv * 0.7 - rehab;
-    const meets70Rule = price <= sevenPercentRule;
-
-    const prompt = `You are Realtywize, an AI deal screener for real estate investors. Analyze this deal and grade it.
+    const prompt = `You are Realtywize, an AI deal analyst for real estate investors. Analyze this deal and grade it.
 
 DEAL:
 - Address: ${address || 'Not provided'}
-- Purchase Price: $${price.toLocaleString()}
-- Rehab Cost: $${rehab.toLocaleString()}
-- ARV (After Repair Value): $${arv.toLocaleString()}
-- Monthly Rent (if held): $${rent.toLocaleString()}
+- Purchase Price: ${fmt(price)}
+- Down Payment: ${pct(downPct)} (${fmt(downAmt)})
+- Loan Amount: ${fmt(loanAmt)}
+- Interest Rate: ${rate}% over ${term} years
+- Closing Costs: ${fmt(closing)}
+- Rehab Estimate: ${fmt(rehab)}
+- Total Cash In: ${fmt(totalCashIn)}
+- ARV: ${arv > 0 ? fmt(arv) : 'Not provided'}
 - Strategy Focus: ${strategy}
 - Notes: ${notes || 'None'}
 
-CALCULATED METRICS:
-- Total Invested: $${totalInvested.toLocaleString()}
-- Gross Profit (ARV - Total): $${grossProfit.toLocaleString()}
-- Gross Margin: ${grossMargin.toFixed(1)}%
-- Annual Rent: $${annualRent.toLocaleString()}
-- Gross Yield: ${grossYield.toFixed(2)}%
-- 70% Rule Max Offer: $${sevenPercentRule.toLocaleString()}
-- Meets 70% Rule: ${meets70Rule ? 'Yes' : 'No'}
+INCOME & EXPENSES (monthly):
+- Gross Rents: ${fmt(grossRentsMo)}
+- Vacancy (${pct(vacancyPct)}): ${fmt(vacancyMo)}
+- Effective Rent: ${fmt(effectiveRentMo)}
+- Property Mgmt (${pct(mgmtPct)}): ${fmt(mgmtMo)}
+- Maintenance (${pct(maintPct)}): ${fmt(maintMo)}
+- Property Tax: ${fmt(taxMo)}
+- Insurance: ${fmt(insurance)}
+- Utilities: ${fmt(utilities)}
+- Total Expenses: ${fmt(totalExpMo)}
+- Monthly Mortgage (P&I): ${fmt(monthlyMortgage)}
+
+KEY METRICS:
+- Monthly NOI: ${fmt(noiMo)}
+- Monthly Cash Flow: ${fmt(cashFlowMo)}
+- Annual Cash Flow: ${fmt(cashFlowYr)}
+- Cap Rate: ${pct(capRate)}
+- Cash-on-Cash Return: ${pct(cocReturn)}
+- Debt Coverage Ratio: ${dcrValue.toFixed(2)} (lender requires 1.25+)
+- Qualifies for commercial loan: ${dcrValue >= 1.25 ? 'Yes' : 'No'}
+- 70% Rule Max Offer: ${arv > 0 ? fmt(maxOffer70) : 'N/A (no ARV)'}
+- Meets 70% Rule: ${arv > 0 ? (meets70 ? 'Yes' : 'No') : 'N/A'}
+- Gross Flip Profit: ${arv > 0 ? fmt(grossProfit) : 'N/A'}
+- Gross Flip Margin: ${arv > 0 ? pct(grossMargin) : 'N/A'}
+- Year 1 Appreciation Gain (${pct(appreciation)}): ${fmt(yr1Gain)}
+- Year 5 Projected Value: ${fmt(yr5Value)}
 
 Respond with ONLY a JSON object (no markdown, no extra text):
 {
   "grade": "A" | "B" | "C" | "D" | "F",
-  "grade_summary": "<one-sentence description of the grade — what makes it this grade>",
-  "flip_score": "<grade A-F>",
-  "brrrr_score": "<grade A-F, or 'N/A' if no rent provided>",
-  "hold_score": "<grade A-F, or 'N/A' if no rent provided>",
-  "best_strategy": "<which strategy fits this deal best and why, 2 sentences>",
-  "risks": "<2-3 sentences on the key risks of this deal>",
-  "recommendation": "<clear recommendation — pursue, negotiate, or pass, with reasoning>"
+  "grade_summary": "<one sentence — what makes it this grade>",
+  "flip_score": "<A-F or N/A if no ARV>",
+  "brrrr_score": "<A-F or N/A if no rent>",
+  "hold_score": "<A-F or N/A if no rent>",
+  "best_strategy": "<which strategy fits best and why, 2 sentences>",
+  "risks": "<2-3 sentences on key risks>",
+  "recommendation": "<pursue / negotiate / pass with clear reasoning>",
+  "max_offer_suggestion": "<if the deal doesn't pencil, what purchase price would make it work — or 'Deal works at current price'>",
+  "one_thing": "<the single most important thing this investor needs to know about this deal>"
 }
 
 Grading rubric:
-- A: Strong margins (>25% flip / >10% cash-on-cash), meets 70% rule, low risk
-- B: Solid deal, meets most metrics, manageable risk
-- C: Marginal — would need negotiation or specific conditions
-- D: Poor numbers, high risk
-- F: Avoid
+- A: Strong cash flow (>$300/mo), CoC >10%, meets 70% rule or strong flip margin >25%
+- B: Positive cash flow, CoC 6-10%, solid fundamentals
+- C: Marginal — thin cash flow or misses one key metric, needs negotiation
+- D: Negative cash flow or poor flip margin, high risk
+- F: Avoid — numbers don't work under any reasonable scenario
 
 Return ONLY the JSON object.`;
 
@@ -3470,7 +3635,7 @@ Return ONLY the JSON object.`;
       const responseText = await callClaude(prompt, 1200);
       const data = parseJSON(responseText);
       const gradeClass = data.grade.toLowerCase();
-      const fmt = (n) => '$' + Math.round(n).toLocaleString();
+
       result.innerHTML = `
         <div class="deal-display">
           <div class="grade-circle ${gradeClass}">${data.grade}</div>
@@ -3479,46 +3644,80 @@ Return ONLY the JSON object.`;
             <p>${data.grade_summary}</p>
           </div>
         </div>
+
         <div class="metric-grid">
           <div class="metric-tile">
-            <div class="m-label">Gross Profit</div>
+            <div class="m-label">Monthly Cash Flow</div>
+            <div class="m-value ${cashFlowMo < 0 ? 'neg' : ''}">${fmt(cashFlowMo)}</div>
+          </div>
+          <div class="metric-tile">
+            <div class="m-label">Cash-on-Cash</div>
+            <div class="m-value ${cocReturn < 0 ? 'neg' : ''}">${pct(cocReturn)}</div>
+          </div>
+          <div class="metric-tile">
+            <div class="m-label">Cap Rate</div>
+            <div class="m-value">${pct(capRate)}</div>
+          </div>
+          <div class="metric-tile">
+            <div class="m-label">Monthly Mortgage</div>
+            <div class="m-value">${fmt(monthlyMortgage)}</div>
+          </div>
+          <div class="metric-tile">
+            <div class="m-label">Annual NOI</div>
+            <div class="m-value">${fmt(noiYr)}</div>
+          </div>
+          <div class="metric-tile">
+            <div class="m-label">Debt Coverage Ratio</div>
+            <div class="m-value ${dcrValue < 1.25 ? 'neg' : ''}">${dcrValue.toFixed(2)}</div>
+          </div>
+          ${arv > 0 ? `
+          <div class="metric-tile">
+            <div class="m-label">Gross Flip Profit</div>
             <div class="m-value ${grossProfit < 0 ? 'neg' : ''}">${fmt(grossProfit)}</div>
           </div>
           <div class="metric-tile">
-            <div class="m-label">Margin</div>
-            <div class="m-value ${grossMargin < 0 ? 'neg' : ''}">${grossMargin.toFixed(1)}%</div>
-          </div>
-          <div class="metric-tile">
-            <div class="m-label">70% Rule Max</div>
-            <div class="m-value">${fmt(sevenPercentRule)}</div>
-          </div>
-          <div class="metric-tile">
-            <div class="m-label">Gross Yield</div>
-            <div class="m-value">${grossYield.toFixed(2)}%</div>
-          </div>
+            <div class="m-label">70% Rule</div>
+            <div class="m-value ${meets70 ? '' : 'neg'}">${meets70 ? '✓ Passes' : '✗ Fails'}</div>
+          </div>` : ''}
         </div>
+
+        <div class="result-section">
+          <h4>💡 The one thing</h4>
+          <p>${data.one_thing}</p>
+        </div>
+
         <div class="result-section">
           <h4>Strategy Fit</h4>
           <p><strong style="color:var(--white)">Flip:</strong> ${data.flip_score} &nbsp;·&nbsp; <strong style="color:var(--white)">BRRRR:</strong> ${data.brrrr_score} &nbsp;·&nbsp; <strong style="color:var(--white)">Hold:</strong> ${data.hold_score}</p>
+          <p style="margin-top:0.5rem">${data.best_strategy}</p>
         </div>
-        <div class="result-section">
-          <h4>Best Strategy</h4>
-          <p>${data.best_strategy}</p>
-        </div>
+
         <div class="result-section">
           <h4>Key Risks</h4>
           <p>${data.risks}</p>
         </div>
+
         <div class="result-section">
           <h4>Recommendation</h4>
           <p>${data.recommendation}</p>
         </div>
+
+        ${data.max_offer_suggestion !== 'Deal works at current price' ? `
+        <div class="result-section">
+          <h4>🎯 Max Offer Suggestion</h4>
+          <p>${data.max_offer_suggestion}</p>
+        </div>` : ''}
+
+        <div class="result-section" style="border-bottom:none">
+          <h4>5-Year Appreciation Outlook (${pct(appreciation)}/yr)</h4>
+          <p>Year 1: ${fmt(yr1Value)} (+${fmt(yr1Gain)}) &nbsp;·&nbsp; Year 5: ${fmt(yr5Value)} (+${fmt(yr5Gain)})</p>
+        </div>
       `;
     } catch (err) {
-      result.innerHTML = `<div class="result-placeholder"><div class="icon">⚠️</div><p>Couldn't grade deal.<br>${err.message}</p></div>`;
+      result.innerHTML = `<div class="result-placeholder"><div class="icon">⚠️</div><p>Couldn't analyze deal.<br>${err.message}</p></div>`;
     } finally {
       btn.disabled = false;
-      btn.innerHTML = 'Grade the Deal →';
+      btn.innerHTML = 'Analyze Deal →';
     }
   }
 
