@@ -2139,6 +2139,18 @@
                 </div>
               </div>
 
+              <div class="card-label" style="margin-top:1rem;">Tax Treatment</div>
+              <div class="input-row">
+                <div>
+                  <label>Marginal Tax Rate %</label>
+                  <input type="number" id="inv-tax-rate" placeholder="32" min="0" max="60" step="1">
+                </div>
+                <div>
+                  <label>Land Value % (non-depreciable)</label>
+                  <input type="number" id="inv-land-pct" placeholder="20" min="0" max="100" step="1">
+                </div>
+              </div>
+
               <div class="card-label" style="margin-top:1rem;">Exit / ARV</div>
               <div class="input-row">
                 <div>
@@ -3842,6 +3854,8 @@ Provide a reasonable estimate based on general knowledge of the area and propert
     const maintPct    = parseFloat(document.getElementById('inv-maint-pct').value) || 0;
     const arv         = parseFloat(document.getElementById('inv-arv').value) || 0;
     const appreciation= parseFloat(document.getElementById('inv-appreciation').value) || 3.5;
+    const taxRate     = parseFloat(document.getElementById('inv-tax-rate').value) || 0;
+    const landPct     = parseFloat(document.getElementById('inv-land-pct').value) || 20;
     const strategy    = document.getElementById('inv-strategy').value;
     const notes       = document.getElementById('inv-notes').value.trim();
     const btn         = document.getElementById('inv-btn');
@@ -3903,6 +3917,15 @@ Provide a reasonable estimate based on general knowledge of the area and propert
     const yr1Gain  = yr1Value - price;
     const yr5Gain  = yr5Value - price;
 
+    // --- Depreciation & tax savings ---
+    const improvementBasis = (price + rehab) * (1 - landPct / 100);
+    const annualDepreciation = improvementBasis / 27.5; // residential straight-line
+    // Year-1 mortgage interest (approx: full-year interest on starting balance)
+    const yr1Interest = loanAmt * (rate / 100);
+    const totalDeductions = annualDepreciation + yr1Interest;
+    const annualTaxSavings = taxRate > 0 ? totalDeductions * (taxRate / 100) : 0;
+    const taxSavingsROI = totalCashIn > 0 && annualTaxSavings > 0 ? (annualTaxSavings / totalCashIn) * 100 : 0;
+
     const fmt = n => '$' + Math.round(n).toLocaleString();
     const pct = n => n.toFixed(1) + '%';
 
@@ -3951,6 +3974,11 @@ KEY METRICS:
 - Gross Flip Margin: ${arv > 0 ? pct(grossMargin) : 'N/A'}
 - Year 1 Appreciation Gain (${pct(appreciation)}): ${fmt(yr1Gain)}
 - Year 5 Projected Value: ${fmt(yr5Value)}
+- Annual Depreciation (27.5-yr, ${landPct}% land): ${taxRate > 0 ? fmt(annualDepreciation) : 'N/A'}
+- Year 1 Mortgage Interest Deduction: ${fmt(yr1Interest)}
+- Marginal Tax Rate: ${taxRate > 0 ? taxRate + '%' : 'Not provided'}
+- Estimated Annual Tax Savings: ${taxRate > 0 ? fmt(annualTaxSavings) : 'N/A — no tax rate entered'}
+- Tax Savings as % of cash invested: ${taxRate > 0 ? pct(taxSavingsROI) : 'N/A'}
 
 Respond with ONLY a JSON object (no markdown, no extra text):
 {
@@ -4023,6 +4051,15 @@ Return ONLY the JSON object.`;
             <div class="m-label">70% Rule</div>
             <div class="m-value ${meets70 ? '' : 'neg'}">${meets70 ? '✓ Passes' : '✗ Fails'}</div>
           </div>` : ''}
+          ${taxRate > 0 ? `
+          <div class="metric-tile">
+            <div class="m-label">Annual Tax Savings</div>
+            <div class="m-value">${fmt(annualTaxSavings)}</div>
+          </div>
+          <div class="metric-tile">
+            <div class="m-label">Tax Savings ROI</div>
+            <div class="m-value">${pct(taxSavingsROI)}</div>
+          </div>` : ''}
         </div>
 
         <div class="result-section">
@@ -4052,10 +4089,18 @@ Return ONLY the JSON object.`;
           <p>${data.max_offer_suggestion}</p>
         </div>` : ''}
 
-        <div class="result-section" style="border-bottom:none">
+        <div class="result-section" style="">
           <h4>5-Year Appreciation Outlook (${pct(appreciation)}/yr)</h4>
           <p>Year 1: ${fmt(yr1Value)} (+${fmt(yr1Gain)}) &nbsp;·&nbsp; Year 5: ${fmt(yr5Value)} (+${fmt(yr5Gain)})</p>
         </div>
+
+        ${taxRate > 0 ? `
+        <div class="result-section" style="border-bottom:none">
+          <h4>💵 Tax Savings Breakdown</h4>
+          <p>Depreciable basis: ${fmt(improvementBasis)} (excl. ${landPct}% land) &nbsp;·&nbsp; Annual depreciation: ${fmt(annualDepreciation)}</p>
+          <p style="margin-top:0.5rem">Year-1 interest deduction: ${fmt(yr1Interest)} &nbsp;·&nbsp; Total deductions: ${fmt(totalDeductions)}</p>
+          <p style="margin-top:0.5rem">At a ${taxRate}% marginal rate, that's <strong style="color:#4ee2ff">${fmt(annualTaxSavings)}/yr</strong> in tax savings — a ${pct(taxSavingsROI)} return on your ${fmt(totalCashIn)} cash invested, before any cash flow or appreciation.</p>
+        </div>` : ''}
       `;
 
       // Persist analysis to Supabase (non-blocking)
@@ -4079,6 +4124,10 @@ Return ONLY the JSON object.`;
         maint_pct:        maintPct,
         arv:              arv || null,
         appreciation:     appreciation,
+        tax_rate:          taxRate || null,
+        land_pct:          landPct,
+        annual_depreciation: taxRate > 0 ? annualDepreciation : null,
+        annual_tax_savings:  taxRate > 0 ? annualTaxSavings : null,
         strategy:         strategy,
         notes:            notes || null,
         monthly_cash_flow: cashFlowMo,
