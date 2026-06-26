@@ -38,7 +38,7 @@ exports.handler = async (event) => {
   }
 
   const { messages, prompt, max_tokens } = payload;
-  const finalMessages = Array.isArray(messages) && messages.length
+  let finalMessages = Array.isArray(messages) && messages.length
     ? messages
     : typeof prompt === "string" && prompt.length
       ? [{ role: "user", content: prompt }]
@@ -46,6 +46,28 @@ exports.handler = async (event) => {
 
   if (!finalMessages) {
     return json(400, { error: "Request must include 'messages' array or 'prompt' string." });
+  }
+
+  // Optional vision-mode: if the request includes a non-empty `images` array,
+  // replace the synthesized user content with an array of image blocks followed
+  // by a text block. Requires a `prompt` string to accompany the images.
+  // Text-only requests (no `images` key, or empty array) take the path above
+  // unchanged — byte-for-byte identical upstream payload.
+  const images = Array.isArray(payload.images) && payload.images.length ? payload.images : null;
+  if (images) {
+    if (typeof prompt !== "string" || !prompt.length) {
+      return json(400, { error: "Vision requests must include a 'prompt' string alongside 'images'." });
+    }
+    finalMessages = [{
+      role: "user",
+      content: [
+        ...images.map(img => ({
+          type: "image",
+          source: { type: "base64", media_type: img.media_type, data: img.data }
+        })),
+        { type: "text", text: prompt }
+      ]
+    }];
   }
 
   const maxTokens = Number.isFinite(max_tokens) && max_tokens > 0 ? max_tokens : 1000;
