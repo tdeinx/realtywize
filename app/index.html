@@ -1655,6 +1655,7 @@
       <button class="sb-item" data-view="buy-box"><span class="sb-icon">🎯</span> Buy Box</button>
       <button class="sb-item" data-view="exit-modeler"><span class="sb-icon">🔀</span> Exit Modeler</button>
       <button class="sb-item" data-view="rehab"><span class="sb-icon">🔨</span> Rehab Estimator</button>
+      <button class="sb-item" data-view="sensitivity"><span class="sb-icon">📉</span> Sensitivity</button>
       <button class="sb-item" data-view="ai-tools"><span class="sb-icon">🤖</span> Deal Analyzer</button>
       <button class="sb-item" data-view="settings"><span class="sb-icon">⚙️</span> Settings</button>
 
@@ -2415,6 +2416,88 @@
         </div>
       </div>
 
+      <!-- ============ SENSITIVITY ANALYSIS VIEW ============ -->
+      <div class="view" id="view-sensitivity">
+
+        <div class="tool-panel-header">
+          <h2>Sensitivity Analysis · Know your downside before you commit.</h2>
+          <p>Enter the deal's core drivers, then drag the sliders to stress-test it. See exactly what happens to your cash flow if rates rise or vacancy climbs — and find the rent you need to break even. Address optional.</p>
+        </div>
+
+        <div class="work-grid">
+
+          <div class="work-card">
+            <div class="card-label">Deal Drivers</div>
+            <div class="input-row">
+              <div>
+                <label>Purchase Price</label>
+                <input type="number" id="sa-price" placeholder="150000" oninput="runSensitivity()">
+              </div>
+              <div>
+                <label>Down Payment %</label>
+                <input type="number" id="sa-down-pct" placeholder="20" oninput="runSensitivity()">
+              </div>
+            </div>
+            <div class="input-row">
+              <div>
+                <label>Interest Rate % (base)</label>
+                <input type="number" id="sa-rate" placeholder="7.5" step="0.1" oninput="syncRateSlider()">
+              </div>
+              <div>
+                <label>Loan Term (years)</label>
+                <input type="number" id="sa-term" placeholder="30" oninput="runSensitivity()">
+              </div>
+            </div>
+            <div class="input-row">
+              <div>
+                <label>Monthly Rent (gross)</label>
+                <input type="number" id="sa-rent" placeholder="1800" oninput="runSensitivity()">
+              </div>
+              <div>
+                <label>Monthly Operating Expenses</label>
+                <input type="number" id="sa-opex" placeholder="650" oninput="runSensitivity()">
+              </div>
+            </div>
+
+            <div class="card-label" style="margin-top:1.25rem;">Stress Test — drag to explore</div>
+
+            <label style="display:flex; justify-content:space-between;">
+              <span>Interest Rate</span>
+              <span id="sa-rate-readout" style="color:#4ee2ff; font-weight:500;">—</span>
+            </label>
+            <input type="range" id="sa-rate-slider" min="0" max="14" step="0.125" value="7.5" oninput="onRateSlider()" style="width:100%;">
+
+            <label style="display:flex; justify-content:space-between; margin-top:0.75rem;">
+              <span>Vacancy Rate</span>
+              <span id="sa-vacancy-readout" style="color:#4ee2ff; font-weight:500;">10%</span>
+            </label>
+            <input type="range" id="sa-vacancy-slider" min="0" max="30" step="1" value="10" oninput="runSensitivity()" style="width:100%;">
+          </div>
+
+          <div class="work-card">
+            <div class="card-label">Live Result</div>
+            <div id="sa-result">
+              <div class="result-placeholder">
+                <div class="icon">📉</div>
+                <p>Enter your deal drivers to<br>stress-test the numbers.</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="work-card" style="margin-top:1rem;">
+          <div class="card-label">Stress Matrix — monthly cash flow at rate × vacancy</div>
+          <p style="font-size:12px; color:var(--text-muted); margin:-0.25rem 0 0.75rem;">Each cell is your monthly cash flow under that combination. Green is positive, red is negative — so you can see at a glance how much headroom the deal has.</p>
+          <div id="sa-matrix" style="overflow-x:auto;">
+            <div class="result-placeholder" style="padding:1.5rem;">
+              <p style="color:var(--text-muted);">Matrix appears once the deal drivers are filled in.</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
       <!-- ============ DEAL FINDER DETAIL DRAWER ============ -->
       <div class="df-drawer-backdrop" id="df-drawer-backdrop" onclick="closeDrawer()"></div>
       <aside class="df-drawer" id="df-drawer">
@@ -2968,6 +3051,7 @@
     'buy-box': 'Buy Box',
     'exit-modeler': 'Exit Modeler',
     'rehab': 'Rehab Estimator',
+    'sensitivity': 'Sensitivity',
     'deal-finder': 'Lead Importer',
     'settings': 'Settings',
     'admin-users': 'User Management'
@@ -3001,6 +3085,7 @@
     if (view === 'buy-box') loadBuyBox();
     if (view === 'deal-finder') { liLoad(); liUpdateCounts(); renderLeadTable(); }
     if (view === 'rehab') loadRehab();
+    if (view === 'sensitivity') runSensitivity();
 
     applyFeatureFlags();
   }
@@ -5321,6 +5406,122 @@ Return ONLY the JSON object.`;
     } catch(e) {
       if (hint) hint.textContent = 'Could not read saved estimate.';
     }
+  }
+
+  // ============================================================
+  // ============ SENSITIVITY ANALYSIS ==========================
+  // ============================================================
+
+  function saMonthlyPayment(loanAmt, ratePct, termYears) {
+    if (ratePct <= 0 || loanAmt <= 0) return 0;
+    const r = (ratePct / 100) / 12;
+    const n = termYears * 12;
+    return loanAmt * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+  }
+
+  // Keep the rate slider in sync when the base rate field is edited
+  function syncRateSlider() {
+    const baseRate = parseFloat(document.getElementById('sa-rate').value);
+    const slider = document.getElementById('sa-rate-slider');
+    if (slider && !isNaN(baseRate)) slider.value = baseRate;
+    runSensitivity();
+  }
+
+  function onRateSlider() {
+    runSensitivity();
+  }
+
+  function runSensitivity() {
+    const price   = parseFloat(document.getElementById('sa-price').value) || 0;
+    const downPct = parseFloat(document.getElementById('sa-down-pct').value) || 20;
+    const term    = parseFloat(document.getElementById('sa-term').value) || 30;
+    const rent    = parseFloat(document.getElementById('sa-rent').value) || 0;
+    const opex    = parseFloat(document.getElementById('sa-opex').value) || 0;
+
+    const sliderRate = parseFloat(document.getElementById('sa-rate-slider').value) || 0;
+    const vacancy    = parseFloat(document.getElementById('sa-vacancy-slider').value) || 0;
+
+    // Update readouts
+    const rateReadout = document.getElementById('sa-rate-readout');
+    const vacReadout  = document.getElementById('sa-vacancy-readout');
+    if (rateReadout) rateReadout.textContent = sliderRate.toFixed(3).replace(/\.?0+$/, '') + '%';
+    if (vacReadout)  vacReadout.textContent = vacancy + '%';
+
+    const result = document.getElementById('sa-result');
+    const matrixWrap = document.getElementById('sa-matrix');
+
+    if (!price || !rent) {
+      if (result) result.innerHTML = '<div class="result-placeholder"><div class="icon">📉</div><p>Enter purchase price and rent to<br>stress-test the numbers.</p></div>';
+      if (matrixWrap) matrixWrap.innerHTML = '<div class="result-placeholder" style="padding:1.5rem;"><p style="color:var(--text-muted);">Matrix appears once the deal drivers are filled in.</p></div>';
+      return;
+    }
+
+    const fmt = n => (n < 0 ? '-$' : '$') + Math.abs(Math.round(n)).toLocaleString();
+    const loanAmt = price * (1 - downPct / 100);
+
+    // Current scenario (from sliders)
+    const mortgage   = saMonthlyPayment(loanAmt, sliderRate, term);
+    const effRent    = rent * (1 - vacancy / 100);
+    const cashFlow   = effRent - opex - mortgage;
+
+    const baseRate = parseFloat(document.getElementById('sa-rate').value) || sliderRate;
+    const baseMortgage = saMonthlyPayment(loanAmt, baseRate, term);
+    const baseCashFlow = (rent * (1 - 10/100)) - opex - baseMortgage; // base = base rate, 10% vacancy
+
+    // Break-even rent at current vacancy: rent such that cashFlow = 0
+    // effRent - opex - mortgage = 0 => rent*(1-vac) = opex + mortgage
+    const breakEvenRent = (1 - vacancy/100) > 0 ? (opex + mortgage) / (1 - vacancy/100) : 0;
+    // Break-even occupancy at current rent: rent*occ - opex - mortgage = 0
+    const breakEvenOcc = rent > 0 ? ((opex + mortgage) / rent) * 100 : 0;
+    const breakEvenVacancy = 100 - breakEvenOcc;
+
+    result.innerHTML = `
+      <div style="margin-bottom:1rem;">
+        <div style="font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted);">Monthly cash flow at ${sliderRate.toFixed(3).replace(/\.?0+$/,'')}% / ${vacancy}% vacancy</div>
+        <div style="font-size:30px; font-weight:600; color:${cashFlow >= 0 ? '#4ee2ff' : '#ff6b6b'}; line-height:1.1; margin-top:2px;">${fmt(cashFlow)}<span style="font-size:14px; color:var(--text-muted); font-weight:400;">/mo</span></div>
+        <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">${fmt(cashFlow * 12)}/yr · mortgage ${fmt(mortgage)}/mo</div>
+      </div>
+
+      <div style="font-size:13px; line-height:2; border-top:0.5px solid var(--border); padding-top:0.75rem;">
+        <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-muted)">Break-even rent (at ${vacancy}% vacancy)</span><span style="color:var(--white); font-weight:500;">${fmt(breakEvenRent)}/mo</span></div>
+        <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-muted)">Your rent vs break-even</span><span style="color:${rent >= breakEvenRent ? '#4ee2ff' : '#ff6b6b'}; font-weight:500;">${rent >= breakEvenRent ? '+' : ''}${fmt(rent - breakEvenRent)}/mo</span></div>
+        <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-muted)">Break-even occupancy</span><span style="color:var(--white); font-weight:500;">${breakEvenOcc.toFixed(1)}%</span></div>
+        <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-muted)">Vacancy cushion before $0</span><span style="color:${breakEvenVacancy >= vacancy ? '#4ee2ff' : '#ff6b6b'}; font-weight:500;">${breakEvenVacancy > 0 ? breakEvenVacancy.toFixed(1) + '%' : 'None'}</span></div>
+      </div>
+
+      <div style="margin-top:0.75rem; padding:0.75rem; border-radius:8px; background:${cashFlow >= 0 ? 'rgba(78,226,255,0.05)' : 'rgba(255,107,107,0.06)'}; font-size:12px; color:var(--text-secondary); line-height:1.5;">
+        ${cashFlow >= 0
+          ? `This deal can absorb vacancy up to <strong style="color:var(--white)">${breakEvenVacancy.toFixed(0)}%</strong> before it goes cash-flow negative at this rate. ${breakEvenVacancy >= 20 ? 'Healthy cushion.' : 'Thin cushion — watch your vacancy.'}`
+          : `At this rate and vacancy the deal is <strong style="color:#ff9b9b">negative</strong>. You'd need rent of <strong style="color:var(--white)">${fmt(breakEvenRent)}/mo</strong> to break even, or a lower rate / purchase price.`}
+      </div>
+    `;
+
+    // ---- Stress matrix: rate rows × vacancy columns ----
+    const rateScenarios = [baseRate - 1, baseRate, baseRate + 1, baseRate + 2, baseRate + 3].filter(r => r > 0);
+    const vacScenarios  = [0, 5, 10, 15, 20];
+
+    let html = '<table style="width:100%; border-collapse:collapse; font-size:12px; min-width:480px;">';
+    html += '<thead><tr><th style="text-align:left; padding:6px 8px; color:var(--text-muted); font-weight:500;">Rate ↓ / Vacancy →</th>';
+    vacScenarios.forEach(v => {
+      html += `<th style="text-align:right; padding:6px 8px; color:var(--text-muted); font-weight:500;">${v}%</th>`;
+    });
+    html += '</tr></thead><tbody>';
+
+    rateScenarios.forEach(r => {
+      const m = saMonthlyPayment(loanAmt, r, term);
+      const isBase = Math.abs(r - baseRate) < 0.001;
+      html += `<tr><td style="text-align:left; padding:6px 8px; color:${isBase ? '#4ee2ff' : 'var(--text-secondary)'}; font-weight:${isBase ? '600' : '400'}; border-top:0.5px solid var(--border);">${r.toFixed(2)}%${isBase ? ' (base)' : ''}</td>`;
+      vacScenarios.forEach(v => {
+        const cf = (rent * (1 - v/100)) - opex - m;
+        const pos = cf >= 0;
+        const bg = pos ? 'rgba(56,211,159,0.12)' : 'rgba(255,107,107,0.12)';
+        const col = pos ? '#7fe9c4' : '#ff9b9b';
+        html += `<td style="text-align:right; padding:6px 8px; border-top:0.5px solid var(--border); background:${bg}; color:${col}; font-weight:500;">${fmt(cf)}</td>`;
+      });
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+    matrixWrap.innerHTML = html;
   }
 
   function money(n) { return "$" + n.toLocaleString(); }
