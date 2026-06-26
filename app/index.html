@@ -1611,6 +1611,10 @@
     .grade-circle { margin: 0 auto; }
     .metric-grid { grid-template-columns: 1fr; }
     .date-pill { display: none; }
+    .ds-thread-scroll {
+      max-height: none !important;
+      overflow-y: visible !important;
+    }
   }
   .menu-btn {
     display: none;
@@ -2560,7 +2564,7 @@
 
           <div class="work-card" style="display:flex; flex-direction:column;">
             <div class="card-label">Ask Deal Scout</div>
-            <div id="ds-thread" style="flex:1; min-height:280px; max-height:440px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; padding:0.5rem 0;">
+            <div id="ds-thread" class="ds-thread-scroll" style="flex:1; min-height:280px; max-height:440px; overflow-y:auto; -webkit-overflow-scrolling:touch; display:flex; flex-direction:column; gap:10px; padding:0.5rem 0;">
               <div class="result-placeholder" id="ds-empty">
                 <div class="icon">🧠</div>
                 <p>Ask a question to start.<br>Try one of the suggestions below.</p>
@@ -2575,8 +2579,8 @@
             </div>
 
             <div style="display:flex; gap:8px; align-items:flex-end;">
-              <textarea id="ds-input" placeholder="Ask about this deal..." style="flex:1; min-height:44px; max-height:120px; resize:none;" onkeydown="scoutInputKey(event)"></textarea>
-              <button class="btn-analyze" id="ds-send" onclick="askScout()" style="flex:none; white-space:nowrap;">Ask →</button>
+              <textarea id="ds-input" placeholder="Ask about this deal..." style="flex:1 1 auto; min-width:0; min-height:44px; max-height:120px; resize:none;" onkeydown="scoutInputKey(event)"></textarea>
+              <button class="btn-analyze" id="ds-send" onclick="askScout()" style="flex:0 0 auto; width:auto; min-width:72px; white-space:nowrap; padding-left:1rem; padding-right:1rem;">Ask →</button>
             </div>
           </div>
 
