@@ -1628,6 +1628,45 @@
     justify-content: center;
     font-size: 1.1rem;
   }
+
+  /* ---- Investor Summary print styles ---- */
+  #deal-summary-print { display: none; }
+
+  @media print {
+    /* Hide the entire app, show only the summary */
+    body * { visibility: hidden; }
+    #deal-summary-print, #deal-summary-print * { visibility: visible; }
+    #deal-summary-print {
+      display: block !important;
+      position: absolute;
+      left: 0; top: 0;
+      width: 100%;
+      padding: 0.5in;
+      background: #fff;
+      color: #1a1a1a;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    }
+    @page { size: letter; margin: 0.5in; }
+  }
+
+  /* Summary internal styles (scoped, apply in print) */
+  #deal-summary-print .ds-head { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #1a1a1a; padding-bottom:12px; margin-bottom:18px; }
+  #deal-summary-print .ds-logo { font-size:20px; font-weight:700; }
+  #deal-summary-print .ds-logo span { color:#0891b2; }
+  #deal-summary-print .ds-meta { text-align:right; font-size:11px; color:#666; }
+  #deal-summary-print .ds-grade { display:flex; align-items:center; gap:16px; margin-bottom:20px; }
+  #deal-summary-print .ds-grade-circle { width:60px; height:60px; border-radius:50%; background:#0891b2; color:#fff; display:flex; align-items:center; justify-content:center; font-size:28px; font-weight:700; }
+  #deal-summary-print .ds-grade-text h2 { margin:0 0 2px; font-size:18px; }
+  #deal-summary-print .ds-grade-text p { margin:0; font-size:12px; color:#555; }
+  #deal-summary-print .ds-section-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:#0891b2; margin:18px 0 8px; }
+  #deal-summary-print .ds-metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:6px; }
+  #deal-summary-print .ds-tile { border:1px solid #ddd; border-radius:6px; padding:8px 10px; }
+  #deal-summary-print .ds-tile .l { font-size:9px; color:#777; text-transform:uppercase; letter-spacing:0.04em; }
+  #deal-summary-print .ds-tile .v { font-size:15px; font-weight:600; margin-top:2px; }
+  #deal-summary-print .ds-row { display:flex; justify-content:space-between; font-size:12px; padding:4px 0; border-bottom:1px solid #eee; }
+  #deal-summary-print .ds-prose { font-size:12px; line-height:1.6; color:#333; margin-bottom:6px; }
+  #deal-summary-print .ds-foot { margin-top:24px; padding-top:12px; border-top:1px solid #ddd; font-size:10px; color:#888; display:flex; justify-content:space-between; }
+  #deal-summary-print .ds-disclaimer { font-size:9px; color:#999; margin-top:8px; line-height:1.4; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -4138,6 +4177,19 @@ Return ONLY the JSON object.`;
     try {
       const responseText = await callClaude(prompt, 1200);
       const data = parseJSON(responseText);
+
+      window._lastAnalysis = {
+        address, price, downPct, rate, term, closing, rehab,
+        grossRentsMo, taxYr, insurance, utilities, mgmtPct, vacancyPct, maintPct,
+        arv, appreciation, taxRate, landPct, rentGrowth,
+        monthlyMortgage, noiYr, cashFlowMo, cashFlowYr, capRate, cocReturn, dcrValue,
+        totalCashIn, grossProfit, meets70, maxOffer70,
+        annualTaxSavings: (typeof annualTaxSavings !== 'undefined' ? annualTaxSavings : 0),
+        projection: (typeof projection !== 'undefined' ? projection : null),
+        ai: data,
+        generatedAt: new Date().toLocaleString()
+      };
+
       const gradeClass = data.grade.toLowerCase();
 
       result.innerHTML = `
@@ -4250,6 +4302,11 @@ Return ONLY the JSON object.`;
           <p style="margin-top:0.5rem">Year-1 interest deduction: ${fmt(yr1Interest)} &nbsp;·&nbsp; Total deductions: ${fmt(totalDeductions)}</p>
           <p style="margin-top:0.5rem">At a ${taxRate}% marginal rate, that's <strong style="color:#4ee2ff">${fmt(annualTaxSavings)}/yr</strong> in tax savings — a ${pct(taxSavingsROI)} return on your ${fmt(totalCashIn)} cash invested, before any cash flow or appreciation.</p>
         </div>` : ''}
+
+        <div style="margin-top:1rem; padding-top:1rem; border-top:0.5px solid var(--border); text-align:center;">
+          <button class="btn-analyze" onclick="downloadDealSummary()" style="width:auto; padding-left:1.5rem; padding-right:1.5rem;">📄 Download Investor Summary</button>
+          <div style="font-size:11px; color:var(--text-muted); margin-top:6px;">Opens a clean one-page summary you can save as PDF or print to share.</div>
+        </div>
       `;
 
       // Persist analysis to Supabase (non-blocking)
@@ -5933,6 +5990,80 @@ Respond as DEAL SCOUT with a direct, practical answer to the investor's latest q
     }).join('');
   }
 
+  // ============================================================
+  // ============ INVESTOR SUMMARY PDF ==========================
+  // ============================================================
+
+  function downloadDealSummary() {
+    const a = window._lastAnalysis;
+    if (!a) {
+      alert('Run a deal analysis first, then download the summary.');
+      return;
+    }
+    const fmt = n => (n < 0 ? '-$' : '$') + Math.abs(Math.round(n || 0)).toLocaleString();
+    const pct = n => (n || 0).toFixed(1) + '%';
+    const ai = a.ai || {};
+
+    const propLabel = a.address || 'Property (address not provided)';
+
+    const container = document.getElementById('deal-summary-print');
+    container.innerHTML = `
+      <div class="ds-head">
+        <div class="ds-logo">Realty<span>Wize</span></div>
+        <div class="ds-meta">
+          Investor Deal Summary<br>
+          Generated ${a.generatedAt}
+        </div>
+      </div>
+
+      <div style="font-size:15px; font-weight:600; margin-bottom:14px;">${propLabel}</div>
+
+      <div class="ds-grade">
+        <div class="ds-grade-circle">${ai.grade || '—'}</div>
+        <div class="ds-grade-text">
+          <h2>Deal Grade: ${ai.grade || 'N/A'}</h2>
+          <p>${ai.grade_summary || ''}</p>
+        </div>
+      </div>
+
+      <div class="ds-section-title">Key Metrics</div>
+      <div class="ds-metrics">
+        <div class="ds-tile"><div class="l">Monthly Cash Flow</div><div class="v">${fmt(a.cashFlowMo)}</div></div>
+        <div class="ds-tile"><div class="l">Cash-on-Cash</div><div class="v">${pct(a.cocReturn)}</div></div>
+        <div class="ds-tile"><div class="l">Cap Rate</div><div class="v">${pct(a.capRate)}</div></div>
+        <div class="ds-tile"><div class="l">DCR</div><div class="v">${(a.dcrValue||0).toFixed(2)}</div></div>
+        <div class="ds-tile"><div class="l">Monthly Mortgage</div><div class="v">${fmt(a.monthlyMortgage)}</div></div>
+        <div class="ds-tile"><div class="l">Annual NOI</div><div class="v">${fmt(a.noiYr)}</div></div>
+        <div class="ds-tile"><div class="l">Total Cash In</div><div class="v">${fmt(a.totalCashIn)}</div></div>
+        ${a.arv > 0 ? `<div class="ds-tile"><div class="l">Flip Profit</div><div class="v">${fmt(a.grossProfit)}</div></div>` : `<div class="ds-tile"><div class="l">Gross Rent/mo</div><div class="v">${fmt(a.grossRentsMo)}</div></div>`}
+      </div>
+
+      <div class="ds-section-title">Deal Inputs</div>
+      <div class="ds-row"><span>Purchase Price</span><span>${fmt(a.price)}</span></div>
+      <div class="ds-row"><span>Down Payment</span><span>${pct(a.downPct)} (${fmt(a.price * a.downPct/100)})</span></div>
+      <div class="ds-row"><span>Interest Rate / Term</span><span>${a.rate}% / ${a.term} yrs</span></div>
+      ${a.rehab > 0 ? `<div class="ds-row"><span>Rehab Estimate</span><span>${fmt(a.rehab)}</span></div>` : ''}
+      ${a.arv > 0 ? `<div class="ds-row"><span>ARV</span><span>${fmt(a.arv)}</span></div>` : ''}
+      <div class="ds-row"><span>Gross Monthly Rent</span><span>${fmt(a.grossRentsMo)}</span></div>
+      ${a.taxRate > 0 ? `<div class="ds-row"><span>Est. Annual Tax Savings</span><span>${fmt(a.annualTaxSavings)}</span></div>` : ''}
+
+      <div class="ds-section-title">Analysis</div>
+      ${ai.one_thing ? `<div class="ds-prose"><strong>The one thing:</strong> ${ai.one_thing}</div>` : ''}
+      ${ai.best_strategy ? `<div class="ds-prose"><strong>Best strategy:</strong> ${ai.best_strategy}</div>` : ''}
+      ${ai.risks ? `<div class="ds-prose"><strong>Key risks:</strong> ${ai.risks}</div>` : ''}
+      ${ai.recommendation ? `<div class="ds-prose"><strong>Recommendation:</strong> ${ai.recommendation}</div>` : ''}
+
+      <div class="ds-foot">
+        <span>RealtyWize — Investor Deal Analysis</span>
+        <span>${a.generatedAt}</span>
+      </div>
+      <div class="ds-disclaimer">This summary is generated from investor-provided figures and AI analysis for informational purposes only. It is not an appraisal, financial advice, or a guarantee of returns. Verify all numbers, comps, and ARV independently before making an offer.</div>
+    `;
+
+    // Trigger the browser print dialog (offers Save as PDF)
+    window.print();
+  }
+
   function money(n) { return "$" + n.toLocaleString(); }
 
   function renderResults() {
@@ -6316,6 +6447,8 @@ Return ONLY the message text. ${channel === 'email' ? 'Start with "Subject: ..."
     updateDatePill();
   }
 </script>
+
+<div id="deal-summary-print"></div>
 
 </body>
 </html>
