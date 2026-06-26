@@ -1656,6 +1656,7 @@
       <button class="sb-item" data-view="exit-modeler"><span class="sb-icon">🔀</span> Exit Modeler</button>
       <button class="sb-item" data-view="rehab"><span class="sb-icon">🔨</span> Rehab Estimator</button>
       <button class="sb-item" data-view="sensitivity"><span class="sb-icon">📉</span> Sensitivity</button>
+      <button class="sb-item" data-view="deal-scout"><span class="sb-icon">🧠</span> Deal Scout</button>
       <button class="sb-item" data-view="ai-tools"><span class="sb-icon">🤖</span> Deal Analyzer</button>
       <button class="sb-item" data-view="settings"><span class="sb-icon">⚙️</span> Settings</button>
 
@@ -2498,6 +2499,89 @@
 
       </div>
 
+      <!-- ============ AI DEAL SCOUT VIEW ============ -->
+      <div class="view" id="view-deal-scout">
+
+        <div class="tool-panel-header">
+          <h2>AI Deal Scout · Ask anything about your deal.</h2>
+          <p>Set the deal context once, then ask in plain English — "what rent do I need for 10% cash-on-cash?", "flip or hold?", "what breaks this deal?" Deal Scout answers grounded in your numbers. Address optional.</p>
+        </div>
+
+        <div class="work-grid">
+
+          <div class="work-card">
+            <div class="card-label">Deal Context</div>
+            <p style="font-size:12px; color:var(--text-muted); margin:-0.25rem 0 0.75rem;">Fill in what you know — Deal Scout uses this to ground its answers. Blank fields are fine; it'll ask if it needs more.</p>
+            <div class="input-row">
+              <div>
+                <label>Purchase Price</label>
+                <input type="number" id="ds-price" placeholder="150000">
+              </div>
+              <div>
+                <label>ARV (optional)</label>
+                <input type="number" id="ds-arv" placeholder="210000">
+              </div>
+            </div>
+            <div class="input-row">
+              <div>
+                <label>Rehab Estimate</label>
+                <input type="number" id="ds-rehab" placeholder="35000">
+              </div>
+              <div>
+                <label>Monthly Rent</label>
+                <input type="number" id="ds-rent" placeholder="1800">
+              </div>
+            </div>
+            <div class="input-row">
+              <div>
+                <label>Monthly Expenses</label>
+                <input type="number" id="ds-opex" placeholder="650">
+              </div>
+              <div>
+                <label>Interest Rate %</label>
+                <input type="number" id="ds-rate" placeholder="7.5" step="0.1">
+              </div>
+            </div>
+            <div class="input-row">
+              <div>
+                <label>Down Payment %</label>
+                <input type="number" id="ds-down" placeholder="20">
+              </div>
+              <div>
+                <label>Loan Term (yrs)</label>
+                <input type="number" id="ds-term" placeholder="30">
+              </div>
+            </div>
+            <label>Notes / context (optional)</label>
+            <textarea id="ds-notes" placeholder="Seller motivation, neighborhood, condition, your goals..." style="min-height:60px;"></textarea>
+            <button class="sample-btn" onclick="resetScoutChat()" style="margin-top:0.75rem;">↺ Clear conversation</button>
+          </div>
+
+          <div class="work-card" style="display:flex; flex-direction:column;">
+            <div class="card-label">Ask Deal Scout</div>
+            <div id="ds-thread" style="flex:1; min-height:280px; max-height:440px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; padding:0.5rem 0;">
+              <div class="result-placeholder" id="ds-empty">
+                <div class="icon">🧠</div>
+                <p>Ask a question to start.<br>Try one of the suggestions below.</p>
+              </div>
+            </div>
+
+            <div id="ds-suggestions" style="display:flex; flex-wrap:wrap; gap:6px; margin:0.5rem 0;">
+              <button class="sample-btn" style="font-size:11px;" onclick="askScoutSuggestion('What rent do I need to hit 10% cash-on-cash?')">Rent for 10% CoC?</button>
+              <button class="sample-btn" style="font-size:11px;" onclick="askScoutSuggestion('Is this a better flip or buy-and-hold, and why?')">Flip or hold?</button>
+              <button class="sample-btn" style="font-size:11px;" onclick="askScoutSuggestion('What is the single biggest risk that could break this deal?')">What breaks this deal?</button>
+              <button class="sample-btn" style="font-size:11px;" onclick="askScoutSuggestion('What is the most I should offer and still make this work?')">Max offer?</button>
+            </div>
+
+            <div style="display:flex; gap:8px; align-items:flex-end;">
+              <textarea id="ds-input" placeholder="Ask about this deal..." style="flex:1; min-height:44px; max-height:120px; resize:none;" onkeydown="scoutInputKey(event)"></textarea>
+              <button class="btn-analyze" id="ds-send" onclick="askScout()" style="flex:none; white-space:nowrap;">Ask →</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
       <!-- ============ DEAL FINDER DETAIL DRAWER ============ -->
       <div class="df-drawer-backdrop" id="df-drawer-backdrop" onclick="closeDrawer()"></div>
       <aside class="df-drawer" id="df-drawer">
@@ -3052,6 +3136,7 @@
     'exit-modeler': 'Exit Modeler',
     'rehab': 'Rehab Estimator',
     'sensitivity': 'Sensitivity',
+    'deal-scout': 'AI Deal Scout',
     'deal-finder': 'Lead Importer',
     'settings': 'Settings',
     'admin-users': 'User Management'
@@ -5522,6 +5607,119 @@ Return ONLY the JSON object.`;
     });
     html += '</tbody></table>';
     matrixWrap.innerHTML = html;
+  }
+
+  // ============================================================
+  // ============ AI DEAL SCOUT (Q&A) ===========================
+  // ============================================================
+
+  let scoutHistory = []; // { role: 'user'|'assistant', text }
+
+  function dsDealContext() {
+    const v = id => document.getElementById(id).value.trim();
+    const lines = [];
+    if (v('ds-price')) lines.push('Purchase Price: $' + Number(v('ds-price')).toLocaleString());
+    if (v('ds-arv'))   lines.push('ARV: $' + Number(v('ds-arv')).toLocaleString());
+    if (v('ds-rehab')) lines.push('Rehab Estimate: $' + Number(v('ds-rehab')).toLocaleString());
+    if (v('ds-rent'))  lines.push('Monthly Rent: $' + Number(v('ds-rent')).toLocaleString());
+    if (v('ds-opex'))  lines.push('Monthly Operating Expenses: $' + Number(v('ds-opex')).toLocaleString());
+    if (v('ds-rate'))  lines.push('Interest Rate: ' + v('ds-rate') + '%');
+    if (v('ds-down'))  lines.push('Down Payment: ' + v('ds-down') + '%');
+    if (v('ds-term'))  lines.push('Loan Term: ' + v('ds-term') + ' years');
+    if (v('ds-notes')) lines.push('Notes: ' + v('ds-notes'));
+    return lines.length ? lines.join('\n') : 'No deal numbers provided yet.';
+  }
+
+  function renderScoutThread() {
+    const thread = document.getElementById('ds-thread');
+    const empty = document.getElementById('ds-empty');
+    if (!thread) return;
+    if (scoutHistory.length === 0) {
+      if (empty) empty.style.display = 'flex';
+      thread.querySelectorAll('.ds-msg').forEach(n => n.remove());
+      return;
+    }
+    if (empty) empty.style.display = 'none';
+    thread.querySelectorAll('.ds-msg').forEach(n => n.remove());
+    scoutHistory.forEach(m => {
+      const div = document.createElement('div');
+      div.className = 'ds-msg';
+      if (m.role === 'user') {
+        div.style.cssText = 'align-self:flex-end; max-width:85%; background:var(--bg-accent,rgba(78,226,255,0.12)); color:var(--white); padding:8px 12px; border-radius:12px 12px 2px 12px; font-size:13px; line-height:1.5;';
+        div.textContent = m.text;
+      } else {
+        div.style.cssText = 'align-self:flex-start; max-width:90%; background:rgba(255,255,255,0.04); color:var(--text-secondary); padding:10px 13px; border-radius:12px 12px 12px 2px; font-size:13px; line-height:1.6; border:0.5px solid var(--border);';
+        div.innerHTML = m.text.replace(/\n/g, '<br>');
+      }
+      thread.appendChild(div);
+    });
+    thread.scrollTop = thread.scrollHeight;
+  }
+
+  function resetScoutChat() {
+    scoutHistory = [];
+    renderScoutThread();
+  }
+
+  function scoutInputKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      askScout();
+    }
+  }
+
+  function askScoutSuggestion(q) {
+    document.getElementById('ds-input').value = q;
+    askScout();
+  }
+
+  async function askScout() {
+    const input = document.getElementById('ds-input');
+    const sendBtn = document.getElementById('ds-send');
+    const question = input.value.trim();
+    if (!question) return;
+
+    scoutHistory.push({ role: 'user', text: question });
+    input.value = '';
+    renderScoutThread();
+
+    // Typing indicator
+    const thread = document.getElementById('ds-thread');
+    const typing = document.createElement('div');
+    typing.className = 'ds-msg ds-typing';
+    typing.style.cssText = 'align-self:flex-start; color:var(--text-muted); font-size:13px; padding:8px 13px;';
+    typing.textContent = 'Deal Scout is thinking…';
+    thread.appendChild(typing);
+    thread.scrollTop = thread.scrollHeight;
+
+    sendBtn.disabled = true;
+
+    // Build conversation transcript for grounding
+    const transcript = scoutHistory.map(m => (m.role === 'user' ? 'INVESTOR' : 'DEAL SCOUT') + ': ' + m.text).join('\n\n');
+
+    const prompt = `You are Realtywize Deal Scout, an AI advisor for real estate investors. Answer the investor's questions about THIS specific deal, grounded in the numbers below. Do the math when asked (cash flow, cash-on-cash, cap rate, break-even, max offer, mortgage P&I, etc.). Be direct and practical — an experienced investor is asking. If a needed number is missing, say what you'd need and give your best estimate with stated assumptions. Keep answers tight: a few sentences, not an essay. Never invent an ARV or market value — if asked for value and none is provided, say it depends on comps you don't have.
+
+DEAL NUMBERS:
+${dsDealContext()}
+
+CONVERSATION SO FAR:
+${transcript}
+
+Respond as DEAL SCOUT with a direct, practical answer to the investor's latest question. Plain text, no JSON, no markdown headers.`;
+
+    try {
+      const answer = await callClaude(prompt, 700);
+      typing.remove();
+      scoutHistory.push({ role: 'assistant', text: answer.trim() });
+      renderScoutThread();
+    } catch (err) {
+      typing.remove();
+      scoutHistory.push({ role: 'assistant', text: '⚠ Sorry — I couldn\'t answer that one. ' + err.message });
+      renderScoutThread();
+    } finally {
+      sendBtn.disabled = false;
+      input.focus();
+    }
   }
 
   function money(n) { return "$" + n.toLocaleString(); }
