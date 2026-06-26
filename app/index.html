@@ -2671,6 +2671,25 @@
     rwSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   }
 
+  // ============================================================
+  // ============ DATA LAYER — all Supabase ops go here =========
+  // Renamed from rwData() in the brief to rwApi() to avoid a
+  // name collision with the existing rwData state object.
+  // ============================================================
+  async function rwApi(action, payload = {}) {
+    const session = rwSupabase.auth.session ? rwSupabase.auth.session() : (await rwSupabase.auth.getSession()).data.session;
+    const token = session?.access_token;
+    if (!token) throw new Error('Not authenticated');
+    const res = await fetch('/.netlify/functions/supabase-data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ action, payload })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Data error');
+    return json;
+  }
+
   // ============ DATA MANAGEMENT ============
   const RW_STORAGE_KEY = 'realtywize_data_v1';
 
@@ -2792,6 +2811,9 @@
     updateDashboardKPIs();
     renderTasks();
     applyFeatureFlags();
+
+    // One-shot localStorage → Supabase migration
+    await migrateLocalStorage();
   }
 
   async function syncFromSupabase() {
@@ -3864,6 +3886,51 @@ Return ONLY the JSON object.`;
           <p>Year 1: ${fmt(yr1Value)} (+${fmt(yr1Gain)}) &nbsp;·&nbsp; Year 5: ${fmt(yr5Value)} (+${fmt(yr5Gain)})</p>
         </div>
       `;
+
+      // Persist analysis to Supabase (non-blocking)
+      rwApi('save_analysis', {
+        address:          address || null,
+        price:            price || null,
+        down_pct:         downPct,
+        rate:             rate,
+        term:             term,
+        closing:          closing,
+        rehab:            rehab,
+        rent1:            rent1,
+        rent2:            rent2,
+        rent3:            rent3,
+        rent4:            rent4,
+        tax_yr:           taxYr,
+        insurance:        insurance,
+        utilities:        utilities,
+        mgmt_pct:         mgmtPct,
+        vacancy_pct:      vacancyPct,
+        maint_pct:        maintPct,
+        arv:              arv || null,
+        appreciation:     appreciation,
+        strategy:         strategy,
+        notes:            notes || null,
+        monthly_cash_flow: cashFlowMo,
+        noi_yr:           noiYr,
+        cap_rate:         capRate,
+        coc_return:       cocReturn,
+        dcr:              dcrValue,
+        monthly_mortgage: monthlyMortgage,
+        total_cash_in:    totalCashIn,
+        gross_flip_profit: arv > 0 ? grossProfit : null,
+        meets_70_rule:    arv > 0 ? meets70 : null,
+        yr5_value:        yr5Value,
+        ai_grade:         data.grade,
+        ai_grade_summary: data.grade_summary,
+        ai_flip_score:    data.flip_score,
+        ai_brrrr_score:   data.brrrr_score,
+        ai_hold_score:    data.hold_score,
+        ai_best_strategy: data.best_strategy,
+        ai_risks:         data.risks,
+        ai_recommendation:data.recommendation,
+        ai_max_offer:     data.max_offer_suggestion,
+        ai_one_thing:     data.one_thing
+      }).catch(err => console.warn('Analysis save failed:', err));
     } catch (err) {
       result.innerHTML = `<div class="result-placeholder"><div class="icon">⚠️</div><p>Couldn't analyze deal.<br>${err.message}</p></div>`;
     } finally {
@@ -3946,6 +4013,20 @@ Return ONLY the JSON object.`;
 
     localStorage.setItem('rw_buy_box', JSON.stringify(bb));
 
+    // Persist to Supabase (non-blocking)
+    rwApi('save_buy_box', {
+      markets:        bb.markets || null,
+      prop_types:     bb.propTypes || [],
+      min_price:      bb.minPrice || null,
+      max_price:      bb.maxPrice || null,
+      min_coc:        bb.minCoC || null,
+      min_equity:     bb.minEquity || null,
+      max_rehab:      bb.maxRehab || null,
+      min_arv_spread: bb.minArvSpread || null,
+      exit_strats:    bb.exitStrats || [],
+      signals:        bb.signals || []
+    }).catch(err => console.error('Buy box Supabase save failed (localStorage copy retained):', err));
+
     document.getElementById('bb-saved-msg').style.display = 'block';
     setTimeout(() => {
       document.getElementById('bb-saved-msg').style.display = 'none';
@@ -3954,32 +4035,51 @@ Return ONLY the JSON object.`;
     renderBuyBoxSummary(bb);
   }
 
-  function loadBuyBox() {
+  async function loadBuyBox() {
+    // Try Supabase first, fall back to localStorage
+    try {
+      const { data } = await rwApi('get_buy_box');
+      if (data) {
+        const bb = {
+          markets:      data.markets || '',
+          propTypes:    data.prop_types || [],
+          minPrice:     data.min_price || 0,
+          maxPrice:     data.max_price || 0,
+          minCoC:       data.min_coc || 0,
+          minEquity:    data.min_equity || 0,
+          maxRehab:     data.max_rehab || 0,
+          minArvSpread: data.min_arv_spread || 0,
+          exitStrats:   data.exit_strats || [],
+          signals:      data.signals || []
+        };
+        _applyBuyBoxToForm(bb);
+        renderBuyBoxSummary(bb);
+        return;
+      }
+    } catch(err) {
+      console.warn('Supabase buy box load failed, trying localStorage:', err);
+    }
+    // localStorage fallback
     const raw = localStorage.getItem('rw_buy_box');
     if (!raw) return;
     try {
       const bb = JSON.parse(raw);
-      if (bb.markets) document.getElementById('bb-markets').value = bb.markets;
-      if (bb.minPrice) document.getElementById('bb-min-price').value = bb.minPrice;
-      if (bb.maxPrice) document.getElementById('bb-max-price').value = bb.maxPrice;
-      if (bb.minCoC) document.getElementById('bb-min-coc').value = bb.minCoC;
-      if (bb.minEquity) document.getElementById('bb-min-equity').value = bb.minEquity;
-      if (bb.maxRehab) document.getElementById('bb-max-rehab').value = bb.maxRehab;
-      if (bb.minArvSpread) document.getElementById('bb-min-arv-spread').value = bb.minArvSpread;
-      (bb.propTypes || []).forEach(v => {
-        const el = document.getElementById('bb-'+v);
-        if (el) el.checked = true;
-      });
-      (bb.exitStrats || []).forEach(v => {
-        const el = document.getElementById('bb-exit-'+v);
-        if (el) el.checked = true;
-      });
-      (bb.signals || []).forEach(v => {
-        const el = document.getElementById('bb-sig-'+v);
-        if (el) el.checked = true;
-      });
+      _applyBuyBoxToForm(bb);
       renderBuyBoxSummary(bb);
-    } catch(e) { console.error('loadBuyBox error', e); }
+    } catch(e) { console.error('loadBuyBox localStorage error', e); }
+  }
+
+  function _applyBuyBoxToForm(bb) {
+    if (bb.markets) document.getElementById('bb-markets').value = bb.markets;
+    if (bb.minPrice) document.getElementById('bb-min-price').value = bb.minPrice;
+    if (bb.maxPrice) document.getElementById('bb-max-price').value = bb.maxPrice;
+    if (bb.minCoC) document.getElementById('bb-min-coc').value = bb.minCoC;
+    if (bb.minEquity) document.getElementById('bb-min-equity').value = bb.minEquity;
+    if (bb.maxRehab) document.getElementById('bb-max-rehab').value = bb.maxRehab;
+    if (bb.minArvSpread) document.getElementById('bb-min-arv-spread').value = bb.minArvSpread;
+    (bb.propTypes || []).forEach(v => { const el = document.getElementById('bb-'+v); if (el) el.checked = true; });
+    (bb.exitStrats || []).forEach(v => { const el = document.getElementById('bb-exit-'+v); if (el) el.checked = true; });
+    (bb.signals || []).forEach(v => { const el = document.getElementById('bb-sig-'+v); if (el) el.checked = true; });
   }
 
   function renderBuyBoxSummary(bb) {
@@ -4009,10 +4109,46 @@ Return ONLY the JSON object.`;
   let liLeads = [];
 
   function liSave() {
+    // Always write to localStorage as fast local cache
     try { localStorage.setItem('rw_leads', JSON.stringify(liLeads)); } catch(e) {}
+    // Non-blocking sync to Supabase
+    rwApi('upsert_leads', { leads: liLeads })
+      .catch(err => console.warn('Lead Supabase sync failed (localStorage retained):', err));
   }
 
-  function liLoad() {
+  async function liLoad() {
+    // Try Supabase first
+    try {
+      const { data } = await rwApi('get_leads');
+      if (data && data.length > 0) {
+        // Map Supabase column names back to app schema
+        liLeads = data.map(r => ({
+          id:              r.id,
+          address:         r.address || '',
+          city:            r.city || '',
+          state:           r.state || '',
+          zip:             r.zip || '',
+          value:           r.value || 0,
+          equityPct:       r.equity_pct || 0,
+          owner:           r.owner || '',
+          yearsOwned:      r.years_owned || 0,
+          beds:            r.beds || 0,
+          baths:           r.baths || 0,
+          sqft:            r.sqft || 0,
+          propType:        r.prop_type || '',
+          signals:         r.signals || [],
+          buyBoxLabel:     r.buy_box_label || null,
+          buyBoxScore:     r.buy_box_score || null,
+          buyBoxHardFails: r.buy_box_hard_fails || [],
+          buyBoxNearMisses:r.buy_box_near_misses || [],
+          source:          r.source || 'csv'
+        }));
+        return;
+      }
+    } catch(err) {
+      console.warn('Supabase lead load failed, trying localStorage:', err);
+    }
+    // localStorage fallback
     try {
       const raw = localStorage.getItem('rw_leads');
       if (raw) liLeads = JSON.parse(raw);
@@ -4443,6 +4579,49 @@ Return ONLY the JSON object.`;
     if (invTab) invTab.classList.add('active');
     if (invPanel) invPanel.classList.add('active');
     liStatus('Lead sent to Deal Analyzer — finish entering the numbers and click Analyze.');
+  }
+
+  async function migrateLocalStorage() {
+    const migrated = localStorage.getItem('rw_migrated_v1');
+    if (migrated) return; // already done
+
+    try {
+      // Migrate buy box
+      const rawBB = localStorage.getItem('rw_buy_box');
+      if (rawBB) {
+        const bb = JSON.parse(rawBB);
+        await rwApi('save_buy_box', {
+          markets:        bb.markets || null,
+          prop_types:     bb.propTypes || [],
+          min_price:      bb.minPrice || null,
+          max_price:      bb.maxPrice || null,
+          min_coc:        bb.minCoC || null,
+          min_equity:     bb.minEquity || null,
+          max_rehab:      bb.maxRehab || null,
+          min_arv_spread: bb.minArvSpread || null,
+          exit_strats:    bb.exitStrats || [],
+          signals:        bb.signals || []
+        });
+        localStorage.removeItem('rw_buy_box');
+        console.log('✓ Buy box migrated to Supabase');
+      }
+
+      // Migrate leads
+      const rawLeads = localStorage.getItem('rw_leads');
+      if (rawLeads) {
+        const leads = JSON.parse(rawLeads);
+        if (leads.length > 0) {
+          await rwApi('upsert_leads', { leads });
+          localStorage.removeItem('rw_leads');
+          console.log(`✓ ${leads.length} leads migrated to Supabase`);
+        }
+      }
+
+      localStorage.setItem('rw_migrated_v1', 'true');
+    } catch(err) {
+      console.error('Migration error (non-fatal):', err);
+      // Do not set migrated flag — will retry on next login
+    }
   }
 
   function money(n) { return "$" + n.toLocaleString(); }

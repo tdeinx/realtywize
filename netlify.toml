@@ -4,6 +4,13 @@
   publish = "."
   functions = "netlify/functions"
 
+# Environment variables required by serverless functions.
+# The empty string here documents that they must exist; the actual
+# values must be set in the Netlify dashboard under
+# Site Settings → Environment Variables — never hardcoded here.
+[build.environment]
+  SUPABASE_SERVICE_ROLE_KEY = ""
+
 # Pretty URLs: /app serves app/index.html automatically.
 # Explicit redirect kept for clarity and to handle /app/ too.
 [[redirects]]

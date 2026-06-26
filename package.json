@@ -1,0 +1,9 @@
+{
+  "name": "realtywize",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Realtywize — Netlify Functions dependencies. The site itself is static HTML/CSS/JS; this package.json only exists so Netlify can install dependencies for the serverless functions.",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0"
+  }
+}
