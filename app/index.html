@@ -1657,6 +1657,7 @@
       <button class="sb-item" data-view="rehab"><span class="sb-icon">🔨</span> Rehab Estimator</button>
       <button class="sb-item" data-view="sensitivity"><span class="sb-icon">📉</span> Sensitivity</button>
       <button class="sb-item" data-view="deal-scout"><span class="sb-icon">🧠</span> Deal Scout</button>
+      <button class="sb-item" data-view="portfolio"><span class="sb-icon">🏦</span> Portfolio</button>
       <button class="sb-item" data-view="ai-tools"><span class="sb-icon">🤖</span> Deal Analyzer</button>
       <button class="sb-item" data-view="settings"><span class="sb-icon">⚙️</span> Settings</button>
 
@@ -2582,6 +2583,76 @@
         </div>
       </div>
 
+      <!-- ============ PORTFOLIO VIEW ============ -->
+      <div class="view" id="view-portfolio">
+
+        <div class="tool-panel-header">
+          <h2>Portfolio · Track what you own.</h2>
+          <p>Add your properties to see live equity, cash flow, and value across your whole portfolio. Update current values and loan balances as they change.</p>
+        </div>
+
+        <!-- Totals strip -->
+        <div id="pf-totals" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px; margin-bottom:1rem;"></div>
+
+        <div style="display:flex; gap:0.75rem; margin-bottom:1rem; flex-wrap:wrap;">
+          <button class="btn-analyze" style="flex:none;" onclick="showPortfolioForm()">+ Add Property</button>
+          <span id="pf-status" style="font-size:12px; color:#4ee2ff; align-self:center;"></span>
+        </div>
+
+        <!-- Add form (hidden until triggered) -->
+        <div id="pf-form" class="work-card" style="display:none; margin-bottom:1rem;">
+          <div class="card-label">Add Property</div>
+          <div class="input-row">
+            <div>
+              <label>Address / label</label>
+              <input type="text" id="pf-address" placeholder="812 N Brevard St">
+            </div>
+            <div>
+              <label>City / State</label>
+              <input type="text" id="pf-city" placeholder="Charlotte, NC">
+            </div>
+          </div>
+          <div class="input-row">
+            <div>
+              <label>Purchase Price</label>
+              <input type="number" id="pf-purchase" placeholder="120000">
+            </div>
+            <div>
+              <label>Current Value</label>
+              <input type="number" id="pf-value" placeholder="180000">
+            </div>
+          </div>
+          <div class="input-row">
+            <div>
+              <label>Loan Balance</label>
+              <input type="number" id="pf-loan" placeholder="90000">
+            </div>
+            <div>
+              <label>Monthly Rent</label>
+              <input type="number" id="pf-rent" placeholder="1600">
+            </div>
+          </div>
+          <div class="input-row">
+            <div>
+              <label>Monthly Expenses</label>
+              <input type="number" id="pf-expense" placeholder="600">
+            </div>
+            <div>
+              <label>Acquired Date</label>
+              <input type="date" id="pf-acquired">
+            </div>
+          </div>
+          <div style="display:flex; gap:0.75rem; margin-top:0.5rem;">
+            <button class="btn-analyze" onclick="addPortfolioProperty()">Save Property →</button>
+            <button class="sample-btn" onclick="hidePortfolioForm()">Cancel</button>
+          </div>
+        </div>
+
+        <!-- Property list -->
+        <div id="pf-list"></div>
+
+      </div>
+
       <!-- ============ DEAL FINDER DETAIL DRAWER ============ -->
       <div class="df-drawer-backdrop" id="df-drawer-backdrop" onclick="closeDrawer()"></div>
       <aside class="df-drawer" id="df-drawer">
@@ -3137,6 +3208,7 @@
     'rehab': 'Rehab Estimator',
     'sensitivity': 'Sensitivity',
     'deal-scout': 'AI Deal Scout',
+    'portfolio': 'Portfolio',
     'deal-finder': 'Lead Importer',
     'settings': 'Settings',
     'admin-users': 'User Management'
@@ -3171,6 +3243,7 @@
     if (view === 'deal-finder') { liLoad(); liUpdateCounts(); renderLeadTable(); }
     if (view === 'rehab') loadRehab();
     if (view === 'sensitivity') runSensitivity();
+    if (view === 'portfolio') loadPortfolio();
 
     applyFeatureFlags();
   }
@@ -5720,6 +5793,140 @@ Respond as DEAL SCOUT with a direct, practical answer to the investor's latest q
       sendBtn.disabled = false;
       input.focus();
     }
+  }
+
+  // ============================================================
+  // ============ PORTFOLIO TRACKER =============================
+  // ============================================================
+
+  let pfProperties = [];
+
+  async function loadPortfolio() {
+    const status = document.getElementById('pf-status');
+    try {
+      const { data } = await rwApi('get_portfolio');
+      pfProperties = data || [];
+      renderPortfolio();
+    } catch (err) {
+      if (status) status.textContent = 'Could not load portfolio: ' + err.message;
+      console.error('loadPortfolio error', err);
+    }
+  }
+
+  function showPortfolioForm() { const f = document.getElementById('pf-form'); if (f) f.style.display = 'block'; }
+  function hidePortfolioForm() {
+    const f = document.getElementById('pf-form');
+    if (f) f.style.display = 'none';
+    ['pf-address','pf-city','pf-purchase','pf-value','pf-loan','pf-rent','pf-expense','pf-acquired'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.value = '';
+    });
+  }
+
+  async function addPortfolioProperty() {
+    const v = id => document.getElementById(id).value;
+    const num = id => parseFloat(document.getElementById(id).value) || null;
+    const address = v('pf-address').trim();
+    const value = num('pf-value');
+    if (!address && !value) {
+      document.getElementById('pf-status').textContent = 'Enter at least an address or current value.';
+      return;
+    }
+    const payload = {
+      address: address || null,
+      city: v('pf-city').trim() || null,
+      state: null,
+      purchase_price: num('pf-purchase'),
+      current_value: value,
+      loan_balance: num('pf-loan'),
+      monthly_rent: num('pf-rent'),
+      monthly_expense: num('pf-expense'),
+      acquired_at: v('pf-acquired') || null
+    };
+    const status = document.getElementById('pf-status');
+    status.textContent = 'Saving…';
+    try {
+      const { data } = await rwApi('add_portfolio', payload);
+      pfProperties.unshift(data);
+      hidePortfolioForm();
+      renderPortfolio();
+      status.textContent = '✓ Property added.';
+      setTimeout(() => status.textContent = '', 3000);
+    } catch (err) {
+      status.textContent = 'Save failed: ' + err.message;
+    }
+  }
+
+  async function deletePortfolioProperty(id) {
+    if (!confirm('Remove this property from your portfolio?')) return;
+    try {
+      await rwApi('delete_portfolio', { id });
+      pfProperties = pfProperties.filter(p => p.id !== id);
+      renderPortfolio();
+    } catch (err) {
+      document.getElementById('pf-status').textContent = 'Delete failed: ' + err.message;
+    }
+  }
+
+  function renderPortfolio() {
+    const fmt = n => (n < 0 ? '-$' : '$') + Math.abs(Math.round(n || 0)).toLocaleString();
+    const totalsWrap = document.getElementById('pf-totals');
+    const list = document.getElementById('pf-list');
+    if (!list) return;
+
+    // Totals
+    let totalValue = 0, totalLoan = 0, totalRent = 0, totalExpense = 0;
+    pfProperties.forEach(p => {
+      totalValue += p.current_value || 0;
+      totalLoan += p.loan_balance || 0;
+      totalRent += p.monthly_rent || 0;
+      totalExpense += p.monthly_expense || 0;
+    });
+    const totalEquity = totalValue - totalLoan;
+    const totalCashFlow = totalRent - totalExpense;
+
+    if (totalsWrap) {
+      if (pfProperties.length === 0) {
+        totalsWrap.innerHTML = '';
+      } else {
+        const tile = (label, val, color) => `
+          <div class="work-card" style="padding:0.85rem 1rem;">
+            <div style="font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted); margin-bottom:3px;">${label}</div>
+            <div style="font-size:20px; font-weight:600; color:${color || 'var(--white)'};">${val}</div>
+          </div>`;
+        totalsWrap.innerHTML =
+          tile('Portfolio Value', fmt(totalValue)) +
+          tile('Total Equity', fmt(totalEquity), '#4ee2ff') +
+          tile('Monthly Cash Flow', fmt(totalCashFlow), totalCashFlow >= 0 ? '#4ee2ff' : '#ff6b6b') +
+          tile('Properties', String(pfProperties.length));
+      }
+    }
+
+    if (pfProperties.length === 0) {
+      list.innerHTML = '<div class="result-placeholder"><div class="icon">🏦</div><p>No properties yet.<br>Add your first to start tracking.</p></div>';
+      return;
+    }
+
+    list.innerHTML = pfProperties.map(p => {
+      const equity = (p.current_value || 0) - (p.loan_balance || 0);
+      const cashFlow = (p.monthly_rent || 0) - (p.monthly_expense || 0);
+      const label = p.address || p.city || 'Untitled property';
+      return `
+        <div class="work-card" style="margin-bottom:10px;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
+            <div>
+              <div style="font-size:14px; font-weight:500; color:var(--white);">${label}</div>
+              ${p.city && p.address ? `<div style="font-size:12px; color:var(--text-muted);">${p.city}</div>` : ''}
+            </div>
+            <button class="sample-btn" onclick="deletePortfolioProperty('${p.id}')" style="font-size:11px; color:#ff6b6b;">Remove</button>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:10px; margin-top:0.75rem; font-size:13px;">
+            <div><div style="color:var(--text-muted); font-size:11px;">Value</div><div style="color:var(--white);">${fmt(p.current_value)}</div></div>
+            <div><div style="color:var(--text-muted); font-size:11px;">Loan</div><div style="color:var(--white);">${fmt(p.loan_balance)}</div></div>
+            <div><div style="color:var(--text-muted); font-size:11px;">Equity</div><div style="color:#4ee2ff;">${fmt(equity)}</div></div>
+            <div><div style="color:var(--text-muted); font-size:11px;">Cash Flow/mo</div><div style="color:${cashFlow >= 0 ? '#4ee2ff' : '#ff6b6b'};">${fmt(cashFlow)}</div></div>
+          </div>
+        </div>`;
+    }).join('');
   }
 
   function money(n) { return "$" + n.toLocaleString(); }

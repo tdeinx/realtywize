@@ -155,6 +155,39 @@ exports.handler = async (event) => {
       return { statusCode: 200, headers, body: JSON.stringify({ data: data || [] }) };
     }
 
+    // ---- PORTFOLIO ----
+    if (action === 'get_portfolio') {
+      const { data, error } = await supabase
+        .from('portfolio')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return { statusCode: 200, headers, body: JSON.stringify({ data: data || [] }) };
+    }
+
+    if (action === 'add_portfolio') {
+      const record = { user_id: userId, ...payload };
+      const { data, error } = await supabase
+        .from('portfolio')
+        .insert(record)
+        .select()
+        .single();
+      if (error) throw error;
+      return { statusCode: 200, headers, body: JSON.stringify({ data }) };
+    }
+
+    if (action === 'delete_portfolio') {
+      const { id } = payload;
+      const { error } = await supabase
+        .from('portfolio')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', userId);
+      if (error) throw error;
+      return { statusCode: 200, headers, body: JSON.stringify({ ok: true }) };
+    }
+
     return { statusCode: 400, headers, body: JSON.stringify({ error: 'Unknown action: ' + action }) };
 
   } catch (err) {
