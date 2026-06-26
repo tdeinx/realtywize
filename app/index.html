@@ -2356,6 +2356,24 @@
 
         <div class="work-grid">
 
+          <div class="work-card" style="grid-column:1 / -1;">
+            <div class="card-label">📷 Estimate from Photos <span style="font-size:11px; color:var(--text-muted); font-weight:400;">— AI condition assessment</span></div>
+            <p style="font-size:12px; color:var(--text-muted); margin:-0.25rem 0 0.75rem;">Upload listing or walkthrough photos. Realtywize assesses visible condition and suggests a rehab scope you can apply to the line items below. Estimates reflect what's visible in the photos — not hidden systems, and never property value.</p>
+
+            <div id="vision-drop" onclick="document.getElementById('vision-input').click()" style="border:1.5px dashed var(--border); border-radius:10px; padding:1.5rem; text-align:center; cursor:pointer;">
+              <div style="font-size:1.5rem; margin-bottom:0.25rem;">📷</div>
+              <div style="font-size:13px; color:var(--white);">Click to upload photos</div>
+              <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Up to 6 images · JPG or PNG</div>
+              <input type="file" id="vision-input" accept="image/jpeg,image/png" multiple style="display:none" onchange="handleVisionUpload(event)">
+            </div>
+
+            <div id="vision-thumbs" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:0.75rem;"></div>
+
+            <button class="btn-analyze" id="vision-btn" onclick="runVisionAssessment()" style="display:none; margin-top:0.75rem;">Assess Condition →</button>
+            <div id="vision-status" style="font-size:12px; color:#4ee2ff; margin-top:0.5rem; min-height:1em;"></div>
+            <div id="vision-result" style="margin-top:0.75rem;"></div>
+          </div>
+
           <div class="work-card">
             <div class="card-label">Scope of Work</div>
             <p style="font-size:12px; color:var(--text-muted); margin:-0.25rem 0 0.75rem;">Defaults are typical starting estimates — edit any number to match your contractor's pricing. Set a line to 0 to skip it.</p>
@@ -3178,7 +3196,7 @@
 
   // ============ CLAUDE API HELPER ============
   // Calls go through a Netlify serverless function so the API key stays server-side.
-  async function callClaude(prompt, maxTokens = 1000) {
+  async function callClaude(prompt, maxTokens = 1000, images = null) {
     // If user provided their own API key, we should ideally use it.
     // However, the netlify function is designed to use the env var.
     // If the user provided a key, we'll pass it in a header that the function could potentially use.
@@ -3191,8 +3209,9 @@
       method: "POST",
       headers: headers,
       body: JSON.stringify({
+        prompt,
         max_tokens: maxTokens,
-        messages: [{ role: "user", content: prompt }]
+        ...(images && images.length ? { images } : {})
       })
     });
     const rawBody = await response.text();
@@ -5079,6 +5098,163 @@ Return ONLY the JSON object.`;
     const msg = document.getElementById('rehab-saved-msg');
     if (msg) { msg.style.display = 'block'; setTimeout(() => msg.style.display = 'none', 3000); }
     renderRehabTotal();
+  }
+
+  // ============================================================
+  // ============ VISION: PHOTO CONDITION ASSESSMENT ============
+  // ============================================================
+
+  let visionImages = []; // { media_type, data (base64), name }
+
+  function handleVisionUpload(event) {
+    const files = Array.from(event.target.files).slice(0, 6 - visionImages.length);
+    if (files.length === 0) return;
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        const dataUrl = e.target.result;
+        const base64 = dataUrl.split(',')[1];
+        const mediaType = file.type;
+        visionImages.push({ media_type: mediaType, data: base64, name: file.name });
+        renderVisionThumbs();
+      };
+      reader.readAsDataURL(file);
+    });
+    event.target.value = '';
+  }
+
+  function renderVisionThumbs() {
+    const wrap = document.getElementById('vision-thumbs');
+    const btn = document.getElementById('vision-btn');
+    if (!wrap) return;
+    wrap.innerHTML = visionImages.map((img, i) => `
+      <div style="position:relative;">
+        <img src="data:${img.media_type};base64,${img.data}" style="width:64px; height:64px; object-fit:cover; border-radius:8px; border:0.5px solid var(--border);">
+        <button onclick="removeVisionImage(${i})" style="position:absolute; top:-6px; right:-6px; background:#ff6b6b; color:#fff; border:none; border-radius:50%; width:18px; height:18px; font-size:11px; cursor:pointer; line-height:1;">×</button>
+      </div>
+    `).join('');
+    if (btn) btn.style.display = visionImages.length > 0 ? 'inline-block' : 'none';
+  }
+
+  function removeVisionImage(i) {
+    visionImages.splice(i, 1);
+    renderVisionThumbs();
+  }
+
+  async function runVisionAssessment() {
+    if (visionImages.length === 0) return;
+    const btn = document.getElementById('vision-btn');
+    const status = document.getElementById('vision-status');
+    const result = document.getElementById('vision-result');
+    btn.disabled = true;
+    btn.innerHTML = 'Assessing...';
+    status.textContent = 'Analyzing ' + visionImages.length + ' photo(s)...';
+    result.innerHTML = '';
+
+    const categoryList = REHAB_CATEGORIES.map(c => c.key + ' (' + c.label + ')').join(', ');
+
+    const prompt = `You are Realtywize, an AI property condition assessor for real estate investors. Assess ONLY what is visible in these photos. You are evaluating CONDITION and likely REHAB SCOPE — never property value or ARV.
+
+Be honest about limitations: photos don't show everything (hidden systems, roof interiors, foundation, behind walls). Flag what you cannot assess.
+
+Map your rehab cost suggestions to these exact categories: ${categoryList}
+
+Respond with ONLY a JSON object (no markdown):
+{
+  "overall_condition": "<turnkey | light cosmetic | moderate | heavy | teardown-risk>",
+  "condition_summary": "<2-3 sentences on what you see — rooms, finishes, visible wear>",
+  "visible_issues": ["<short issue>", "<short issue>"],
+  "cannot_assess": ["<what the photos don't reveal — e.g. roof condition, HVAC age, foundation>"],
+  "suggested_rehab": [
+    { "category": "<one of the exact category keys above>", "estimate": <number>, "reason": "<short why>" }
+  ],
+  "confidence": "<low | medium | high> — based on photo coverage and clarity"
+}
+
+Return ONLY the JSON object.`;
+
+    try {
+      const responseText = await callClaude(prompt, 1200, visionImages.map(img => ({ media_type: img.media_type, data: img.data })));
+      const data = parseJSON(responseText);
+      window._visionLast = data;
+
+      const condColors = { 'turnkey':'#4ee2ff', 'light cosmetic':'#4ee2ff', 'moderate':'#ffc107', 'heavy':'#ff9b3d', 'teardown-risk':'#ff6b6b' };
+      const condColor = condColors[data.overall_condition] || 'var(--white)';
+      const fmt = n => '$' + Math.round(n).toLocaleString();
+
+      const suggestedTotal = (data.suggested_rehab || []).reduce((a,s) => a + (parseFloat(s.estimate)||0), 0);
+
+      const labelFor = key => {
+        const c = REHAB_CATEGORIES.find(x => x.key === key);
+        return c ? c.label : key;
+      };
+
+      result.innerHTML = `
+        <div style="border:0.5px solid var(--border); border-radius:10px; padding:1rem; background:rgba(255,255,255,0.02);">
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+            <span style="font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted);">Overall condition</span>
+            <span style="font-size:14px; font-weight:600; color:${condColor}; text-transform:capitalize;">${data.overall_condition}</span>
+            <span style="margin-left:auto; font-size:11px; color:var(--text-muted);">Confidence: ${data.confidence}</span>
+          </div>
+          <p style="font-size:13px; color:var(--text-secondary); line-height:1.6; margin-bottom:10px;">${data.condition_summary}</p>
+
+          ${(data.visible_issues||[]).length ? `
+          <div style="font-size:12px; color:var(--text-muted); margin-bottom:4px;">Visible issues</div>
+          <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px;">
+            ${data.visible_issues.map(i => `<span style="font-size:11px; padding:2px 8px; border-radius:5px; background:rgba(255,107,107,0.12); color:#ff9b9b;">${i}</span>`).join('')}
+          </div>` : ''}
+
+          ${(data.cannot_assess||[]).length ? `
+          <div style="font-size:12px; color:var(--text-muted); margin-bottom:4px;">⚠ Photos can't confirm</div>
+          <div style="font-size:12px; color:var(--text-muted); line-height:1.6; margin-bottom:10px;">${data.cannot_assess.join(' · ')}</div>` : ''}
+
+          ${(data.suggested_rehab||[]).length ? `
+          <div style="border-top:0.5px solid var(--border); padding-top:10px; margin-top:6px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <span style="font-size:12px; color:var(--text-muted);">Suggested rehab scope</span>
+              <span style="font-size:13px; color:var(--white); font-weight:500;">${fmt(suggestedTotal)}</span>
+            </div>
+            <div style="font-size:12px; line-height:1.9;">
+              ${data.suggested_rehab.map(s => `
+                <div style="display:flex; justify-content:space-between;">
+                  <span style="color:var(--text-secondary);">${labelFor(s.category)} <span style="color:var(--text-muted); font-size:11px;">— ${s.reason}</span></span>
+                  <span style="color:var(--white);">${fmt(s.estimate)}</span>
+                </div>
+              `).join('')}
+            </div>
+            <button class="btn-analyze" onclick="applyVisionToLineItems()" style="margin-top:0.75rem; width:100%;">↓ Apply to Rehab Line Items</button>
+            <p style="font-size:11px; color:var(--text-muted); margin-top:6px;">This overwrites the matching line items below with these estimates. You can still edit any number afterward.</p>
+          </div>` : ''}
+        </div>
+      `;
+      status.textContent = '';
+    } catch(err) {
+      status.textContent = '';
+      result.innerHTML = '<div class="error">Assessment failed: ' + err.message + '</div>';
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = 'Assess Condition →';
+    }
+  }
+
+  function applyVisionToLineItems() {
+    const data = window._visionLast;
+    if (!data || !data.suggested_rehab) return;
+    if (!rehabState) rehabState = defaultRehabState();
+    data.suggested_rehab.forEach(s => {
+      const key = s.category;
+      if (rehabState.lines.hasOwnProperty(key)) {
+        rehabState.lines[key] = parseFloat(s.estimate) || 0;
+        const input = document.getElementById('rehab-line-' + key);
+        if (input) input.value = rehabState.lines[key];
+      }
+    });
+    renderRehabTotal();
+    const status = document.getElementById('vision-status');
+    if (status) {
+      status.textContent = '✓ Applied to line items below. Adjust any number as needed.';
+      setTimeout(() => { status.textContent = ''; }, 4000);
+    }
   }
 
   function loadRehab() {
