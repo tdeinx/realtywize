@@ -2162,6 +2162,16 @@
                   <input type="number" id="inv-appreciation" placeholder="3.5" step="0.1">
                 </div>
               </div>
+              <div class="input-row">
+                <div>
+                  <label>Annual Rent Growth %</label>
+                  <input type="number" id="inv-rent-growth" placeholder="3" step="0.1">
+                </div>
+                <div>
+                  <label>Annual Expense Growth % (optional)</label>
+                  <input type="number" id="inv-expense-growth" placeholder="2" step="0.1">
+                </div>
+              </div>
 
               <label>Strategy Focus</label>
               <select id="inv-strategy">
@@ -3856,6 +3866,8 @@ Provide a reasonable estimate based on general knowledge of the area and propert
     const appreciation= parseFloat(document.getElementById('inv-appreciation').value) || 3.5;
     const taxRate     = parseFloat(document.getElementById('inv-tax-rate').value) || 0;
     const landPct     = parseFloat(document.getElementById('inv-land-pct').value) || 20;
+    const rentGrowth    = parseFloat(document.getElementById('inv-rent-growth').value) || 0;
+    const expenseGrowth = parseFloat(document.getElementById('inv-expense-growth').value) || 0;
     const strategy    = document.getElementById('inv-strategy').value;
     const notes       = document.getElementById('inv-notes').value.trim();
     const btn         = document.getElementById('inv-btn');
@@ -3926,6 +3938,29 @@ Provide a reasonable estimate based on general knowledge of the area and propert
     const annualTaxSavings = taxRate > 0 ? totalDeductions * (taxRate / 100) : 0;
     const taxSavingsROI = totalCashIn > 0 && annualTaxSavings > 0 ? (annualTaxSavings / totalCashIn) * 100 : 0;
 
+    // --- 5-year rent/cash-flow projection ---
+    const projection = [];
+    let cumulativeCashFlow = 0;
+    for (let yr = 1; yr <= 5; yr++) {
+      const grownRentMo = grossRentsMo * Math.pow(1 + rentGrowth / 100, yr - 1);
+      const grownVacancyMo = grownRentMo * (vacancyPct / 100);
+      const grownMgmtMo = grownRentMo * (mgmtPct / 100);
+      const grownMaintMo = grownRentMo * (maintPct / 100);
+      // Fixed expenses (tax, insurance, utilities) grow at expenseGrowth
+      const fixedExpMo = (taxMo + insurance + utilities) * Math.pow(1 + expenseGrowth / 100, yr - 1);
+      const yrExpMo = grownVacancyMo + grownMgmtMo + grownMaintMo + fixedExpMo;
+      const yrNoiMo = grownRentMo - yrExpMo;
+      const yrCashFlowMo = yrNoiMo - monthlyMortgage;
+      cumulativeCashFlow += yrCashFlowMo * 12;
+      projection.push({
+        year: yr,
+        rentMo: grownRentMo,
+        cashFlowMo: yrCashFlowMo,
+        cashFlowYr: yrCashFlowMo * 12,
+        cumulative: cumulativeCashFlow
+      });
+    }
+
     const fmt = n => '$' + Math.round(n).toLocaleString();
     const pct = n => n.toFixed(1) + '%';
 
@@ -3979,6 +4014,10 @@ KEY METRICS:
 - Marginal Tax Rate: ${taxRate > 0 ? taxRate + '%' : 'Not provided'}
 - Estimated Annual Tax Savings: ${taxRate > 0 ? fmt(annualTaxSavings) : 'N/A — no tax rate entered'}
 - Tax Savings as % of cash invested: ${taxRate > 0 ? pct(taxSavingsROI) : 'N/A'}
+- Annual Rent Growth Assumption: ${rentGrowth > 0 ? rentGrowth + '%' : 'Flat (0%)'}
+- Year 1 Cash Flow: ${fmt(projection[0].cashFlowYr)}
+- Year 5 Cash Flow: ${fmt(projection[4].cashFlowYr)}
+- 5-Year Cumulative Cash Flow: ${fmt(projection[4].cumulative)}
 
 Respond with ONLY a JSON object (no markdown, no extra text):
 {
@@ -4094,6 +4133,23 @@ Return ONLY the JSON object.`;
           <p>Year 1: ${fmt(yr1Value)} (+${fmt(yr1Gain)}) &nbsp;·&nbsp; Year 5: ${fmt(yr5Value)} (+${fmt(yr5Gain)})</p>
         </div>
 
+        ${rentGrowth > 0 ? `
+        <div class="result-section">
+          <h4>📈 5-Year Cash Flow Projection (${pct(rentGrowth)} rent growth)</h4>
+          <div style="font-size:13px; line-height:1.9; margin-top:0.5rem;">
+            ${projection.map(p => `
+              <div style="display:flex; justify-content:space-between; ${p.year === 5 ? 'border-top:0.5px solid var(--border); padding-top:6px; margin-top:4px;' : ''}">
+                <span style="color:var(--text-muted)">Year ${p.year} — rent ${fmt(p.rentMo)}/mo</span>
+                <span style="color:${p.cashFlowMo >= 0 ? 'var(--white)' : '#ff6b6b'}">${fmt(p.cashFlowMo)}/mo &nbsp;·&nbsp; ${fmt(p.cashFlowYr)}/yr</span>
+              </div>
+            `).join('')}
+            <div style="display:flex; justify-content:space-between; margin-top:8px; padding-top:6px; border-top:0.5px solid var(--border);">
+              <span style="color:var(--text-muted)">5-year cumulative cash flow</span>
+              <span style="color:#4ee2ff; font-weight:500;">${fmt(projection[4].cumulative)}</span>
+            </div>
+          </div>
+        </div>` : ''}
+
         ${taxRate > 0 ? `
         <div class="result-section" style="border-bottom:none">
           <h4>💵 Tax Savings Breakdown</h4>
@@ -4128,6 +4184,10 @@ Return ONLY the JSON object.`;
         land_pct:          landPct,
         annual_depreciation: taxRate > 0 ? annualDepreciation : null,
         annual_tax_savings:  taxRate > 0 ? annualTaxSavings : null,
+        rent_growth:           rentGrowth || null,
+        expense_growth:        expenseGrowth || null,
+        yr5_cash_flow:         rentGrowth > 0 ? projection[4].cashFlowYr : null,
+        cumulative_cash_flow:  rentGrowth > 0 ? projection[4].cumulative : null,
         strategy:         strategy,
         notes:            notes || null,
         monthly_cash_flow: cashFlowMo,
