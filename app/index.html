@@ -1654,6 +1654,7 @@
       <button class="sb-item" data-view="deal-finder"><span class="sb-icon">🎯</span> Lead Importer</button>
       <button class="sb-item" data-view="buy-box"><span class="sb-icon">🎯</span> Buy Box</button>
       <button class="sb-item" data-view="exit-modeler"><span class="sb-icon">🔀</span> Exit Modeler</button>
+      <button class="sb-item" data-view="rehab"><span class="sb-icon">🔨</span> Rehab Estimator</button>
       <button class="sb-item" data-view="ai-tools"><span class="sb-icon">🤖</span> Deal Analyzer</button>
       <button class="sb-item" data-view="settings"><span class="sb-icon">⚙️</span> Settings</button>
 
@@ -2076,7 +2077,11 @@
                 </div>
                 <div>
                   <label>Rehab Estimate (optional)</label>
-                  <input type="number" id="inv-rehab" placeholder="0">
+                  <div style="display:flex; gap:8px; align-items:center;">
+                    <input type="number" id="inv-rehab" placeholder="0" style="flex:1;">
+                    <button type="button" class="sample-btn" onclick="pullRehabEstimate()" style="white-space:nowrap; font-size:11px;" title="Pull total from your saved Rehab Estimator">↙ Use Estimator</button>
+                  </div>
+                  <div id="inv-rehab-hint" style="font-size:11px; color:var(--text-muted); margin-top:3px;"></div>
                 </div>
               </div>
 
@@ -2501,6 +2506,57 @@
                 <p>Enter your deal numbers and model<br>all four exits side by side.</p>
               </div>
             </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ============ REHAB ESTIMATOR VIEW ============ -->
+      <div class="view" id="view-rehab">
+
+        <div class="tool-panel-header">
+          <h2>Rehab Estimator · Scope the work, know your number.</h2>
+          <p>Build a line-item repair estimate with editable defaults for each category. Add a contingency buffer, set the as-is value, and send the total straight to your Deal Analyzer or Exit Modeler. Address is optional.</p>
+        </div>
+
+        <div class="work-grid">
+
+          <div class="work-card">
+            <div class="card-label">Scope of Work</div>
+            <p style="font-size:12px; color:var(--text-muted); margin:-0.25rem 0 0.75rem;">Defaults are typical starting estimates — edit any number to match your contractor's pricing. Set a line to 0 to skip it.</p>
+
+            <div id="rehab-lines"></div>
+
+            <div class="input-row" style="margin-top:1rem;">
+              <div>
+                <label>Contingency Buffer %</label>
+                <input type="number" id="rehab-contingency" placeholder="10" step="1" oninput="renderRehabTotal()">
+              </div>
+              <div>
+                <label>Property Sqft (optional)</label>
+                <input type="number" id="rehab-sqft" placeholder="1400" oninput="renderRehabTotal()">
+              </div>
+            </div>
+
+            <div class="card-label" style="margin-top:1rem;">As-Is Value (ACV)</div>
+            <div class="input-row">
+              <div>
+                <label>As-Is / Current Value</label>
+                <input type="number" id="rehab-acv" placeholder="120000" oninput="renderRehabTotal()">
+              </div>
+              <div>
+                <label>ARV — After Repair Value</label>
+                <input type="number" id="rehab-arv" placeholder="210000" oninput="renderRehabTotal()">
+              </div>
+            </div>
+
+            <button class="btn-analyze" onclick="saveRehab()" style="margin-top:1rem;">Save Estimate</button>
+            <div id="rehab-saved-msg" style="display:none; color:#4ee2ff; font-size:13px; margin-top:0.5rem;">✓ Rehab estimate saved.</div>
+          </div>
+
+          <div class="work-card">
+            <div class="card-label">Estimate Summary</div>
+            <div id="rehab-summary"></div>
           </div>
 
         </div>
@@ -3056,6 +3112,7 @@
     'ai-tools': 'AI Assistant',
     'buy-box': 'Buy Box',
     'exit-modeler': 'Exit Modeler',
+    'rehab': 'Rehab Estimator',
     'deal-finder': 'Lead Importer',
     'settings': 'Settings',
     'admin-users': 'User Management'
@@ -3088,6 +3145,7 @@
     if (view === 'admin-users') fetchAdminUsers();
     if (view === 'buy-box') loadBuyBox();
     if (view === 'deal-finder') { liLoad(); liUpdateCounts(); renderLeadTable(); }
+    if (view === 'rehab') loadRehab();
 
     applyFeatureFlags();
   }
@@ -4969,6 +5027,160 @@ Return ONLY the JSON object.`;
     } finally {
       btn.disabled = false;
       btn.innerHTML = '🤖 Get AI Recommendation →';
+    }
+  }
+
+  // ============================================================
+  // ============ REHAB ESTIMATOR ===============================
+  // ============================================================
+
+  const REHAB_CATEGORIES = [
+    { key:'roof',        label:'Roof',                  def:8000 },
+    { key:'hvac',        label:'HVAC',                  def:6000 },
+    { key:'plumbing',    label:'Plumbing',              def:4000 },
+    { key:'electrical',  label:'Electrical',            def:4000 },
+    { key:'kitchen',     label:'Kitchen',               def:12000 },
+    { key:'bathrooms',   label:'Bathrooms',             def:7000 },
+    { key:'flooring',    label:'Flooring',              def:5000 },
+    { key:'paint',       label:'Paint (int/ext)',       def:4000 },
+    { key:'windows',     label:'Windows & Doors',       def:3500 },
+    { key:'foundation',  label:'Foundation/Structural', def:0 },
+    { key:'exterior',    label:'Landscaping/Exterior',  def:2500 },
+    { key:'appliances',  label:'Appliances',            def:2500 },
+    { key:'other',       label:'Other',                 def:0 }
+  ];
+
+  let rehabState = null;
+
+  function defaultRehabState() {
+    const lines = {};
+    REHAB_CATEGORIES.forEach(c => { lines[c.key] = c.def; });
+    return { lines, contingency:10, sqft:0, acv:0, arv:0, savedAt:null };
+  }
+
+  function renderRehabLines() {
+    const wrap = document.getElementById('rehab-lines');
+    if (!wrap) return;
+    if (!rehabState) rehabState = defaultRehabState();
+    wrap.innerHTML = REHAB_CATEGORIES.map(c => `
+      <div style="display:flex; align-items:center; gap:10px; padding:5px 0; border-bottom:0.5px solid var(--border);">
+        <span style="flex:1; font-size:13px; color:var(--text-secondary);">${c.label}</span>
+        <span style="font-size:13px; color:var(--text-muted);">$</span>
+        <input type="number" id="rehab-line-${c.key}" value="${rehabState.lines[c.key] || 0}"
+          oninput="updateRehabLine('${c.key}', this.value)"
+          style="width:110px; text-align:right;">
+      </div>
+    `).join('');
+  }
+
+  function updateRehabLine(key, val) {
+    if (!rehabState) rehabState = defaultRehabState();
+    rehabState.lines[key] = parseFloat(val) || 0;
+    renderRehabTotal();
+  }
+
+  function computeRehabTotals() {
+    if (!rehabState) rehabState = defaultRehabState();
+    const subtotal = Object.values(rehabState.lines).reduce((a,b) => a + (parseFloat(b)||0), 0);
+    const contingency = parseFloat(document.getElementById('rehab-contingency')?.value) || 0;
+    const contingencyAmt = subtotal * (contingency / 100);
+    const total = subtotal + contingencyAmt;
+    const sqft = parseFloat(document.getElementById('rehab-sqft')?.value) || 0;
+    const perSqft = sqft > 0 ? total / sqft : 0;
+    const acv = parseFloat(document.getElementById('rehab-acv')?.value) || 0;
+    const arv = parseFloat(document.getElementById('rehab-arv')?.value) || 0;
+    const allInBasis = acv + total;
+    const equitySpread = arv > 0 ? arv - allInBasis : 0;
+    const spreadPct = arv > 0 ? (equitySpread / arv) * 100 : 0;
+    return { subtotal, contingency, contingencyAmt, total, sqft, perSqft, acv, arv, allInBasis, equitySpread, spreadPct };
+  }
+
+  function renderRehabTotal() {
+    const t = computeRehabTotals();
+    const fmt = n => '$' + Math.round(n).toLocaleString();
+    const pct = n => n.toFixed(1) + '%';
+    const summary = document.getElementById('rehab-summary');
+    if (!summary) return;
+    summary.innerHTML = `
+      <div style="display:flex; flex-direction:column; gap:2px; margin-bottom:1rem;">
+        <div style="font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted);">Total rehab budget</div>
+        <div style="font-size:28px; font-weight:600; color:var(--white);">${fmt(t.total)}</div>
+        ${t.perSqft > 0 ? `<div style="font-size:12px; color:var(--text-muted);">${fmt(t.perSqft)}/sqft</div>` : ''}
+      </div>
+      <div style="font-size:13px; line-height:2;">
+        <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-muted)">Line-item subtotal</span><span style="color:var(--white)">${fmt(t.subtotal)}</span></div>
+        <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-muted)">Contingency (${t.contingency}%)</span><span style="color:var(--white)">${fmt(t.contingencyAmt)}</span></div>
+        <div style="display:flex; justify-content:space-between; border-top:0.5px solid var(--border); padding-top:6px; margin-top:4px;"><span style="color:var(--text-muted)">Total rehab</span><span style="color:var(--white); font-weight:500;">${fmt(t.total)}</span></div>
+      </div>
+      ${t.acv > 0 ? `
+      <div style="margin-top:1rem; border-top:0.5px solid var(--border); padding-top:0.75rem;">
+        <div style="font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted); margin-bottom:6px;">All-in basis</div>
+        <div style="font-size:13px; line-height:2;">
+          <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-muted)">As-is value</span><span style="color:var(--white)">${fmt(t.acv)}</span></div>
+          <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-muted)">+ Total rehab</span><span style="color:var(--white)">${fmt(t.total)}</span></div>
+          <div style="display:flex; justify-content:space-between; border-top:0.5px solid var(--border); padding-top:6px; margin-top:4px;"><span style="color:var(--text-muted)">All-in basis</span><span style="color:var(--white); font-weight:500;">${fmt(t.allInBasis)}</span></div>
+          ${t.arv > 0 ? `
+          <div style="display:flex; justify-content:space-between; margin-top:6px;"><span style="color:var(--text-muted)">Equity spread vs ARV</span><span style="color:${t.equitySpread >= 0 ? '#4ee2ff' : '#ff6b6b'}; font-weight:500;">${fmt(t.equitySpread)} (${pct(t.spreadPct)})</span></div>
+          ` : ''}
+        </div>
+      </div>` : `
+      <div style="margin-top:1rem; padding:0.75rem; border:0.5px dashed var(--border); border-radius:8px; font-size:12px; color:var(--text-muted);">
+        Add an as-is value to see your all-in basis and equity spread.
+      </div>`}
+    `;
+  }
+
+  function saveRehab() {
+    if (!rehabState) rehabState = defaultRehabState();
+    rehabState.contingency = parseFloat(document.getElementById('rehab-contingency')?.value) || 0;
+    rehabState.sqft = parseFloat(document.getElementById('rehab-sqft')?.value) || 0;
+    rehabState.acv = parseFloat(document.getElementById('rehab-acv')?.value) || 0;
+    rehabState.arv = parseFloat(document.getElementById('rehab-arv')?.value) || 0;
+    rehabState.savedAt = new Date().toLocaleString();
+
+    try { localStorage.setItem('rw_rehab', JSON.stringify(rehabState)); } catch(e) {}
+
+    const msg = document.getElementById('rehab-saved-msg');
+    if (msg) { msg.style.display = 'block'; setTimeout(() => msg.style.display = 'none', 3000); }
+    renderRehabTotal();
+  }
+
+  function loadRehab() {
+    const raw = localStorage.getItem('rw_rehab');
+    if (raw) {
+      try { rehabState = JSON.parse(raw); } catch(e) { rehabState = defaultRehabState(); }
+    } else {
+      rehabState = defaultRehabState();
+    }
+    renderRehabLines();
+    const cont = document.getElementById('rehab-contingency');
+    const sqft = document.getElementById('rehab-sqft');
+    const acv  = document.getElementById('rehab-acv');
+    const arv  = document.getElementById('rehab-arv');
+    if (cont) cont.value = rehabState.contingency || 10;
+    if (sqft && rehabState.sqft) sqft.value = rehabState.sqft;
+    if (acv && rehabState.acv) acv.value = rehabState.acv;
+    if (arv && rehabState.arv) arv.value = rehabState.arv;
+    renderRehabTotal();
+  }
+
+  // Pull saved rehab total into the Deal Analyzer rehab field
+  function pullRehabEstimate() {
+    const raw = localStorage.getItem('rw_rehab');
+    const hint = document.getElementById('inv-rehab-hint');
+    if (!raw) {
+      if (hint) hint.textContent = 'No saved estimate yet — build one in the Rehab Estimator tab.';
+      return;
+    }
+    try {
+      const saved = JSON.parse(raw);
+      const subtotal = Object.values(saved.lines || {}).reduce((a,b) => a + (parseFloat(b)||0), 0);
+      const total = subtotal * (1 + (saved.contingency || 0) / 100);
+      const field = document.getElementById('inv-rehab');
+      if (field) field.value = Math.round(total);
+      if (hint) hint.textContent = `Pulled $${Math.round(total).toLocaleString()} from your saved estimate (${saved.savedAt || 'unsaved'}).`;
+    } catch(e) {
+      if (hint) hint.textContent = 'Could not read saved estimate.';
     }
   }
 
