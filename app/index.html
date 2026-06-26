@@ -1696,244 +1696,57 @@
           <div class="kpi-card">
             <div class="kpi-icon-lg cyan">👥</div>
             <div>
-              <div class="kpi-num-lg">247</div>
-              <div class="kpi-label-lg">New Leads</div>
-              <div class="kpi-change-lg">↑ 38% this week</div>
+              <div class="kpi-num-lg" id="kpi-imported-leads">0</div>
+              <div class="kpi-label-lg">Imported Leads</div>
             </div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-icon-lg green">💬</div>
+            <div class="kpi-icon-lg green">🎯</div>
             <div>
-              <div class="kpi-num-lg">183</div>
-              <div class="kpi-label-lg">Conversations</div>
-              <div class="kpi-change-lg">↑ 27% this week</div>
+              <div class="kpi-num-lg" id="kpi-scored">0</div>
+              <div class="kpi-label-lg">Scored</div>
             </div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-icon-lg purple">📅</div>
+            <div class="kpi-icon-lg purple">✅</div>
             <div>
-              <div class="kpi-num-lg">32</div>
-              <div class="kpi-label-lg">Appointments</div>
-              <div class="kpi-change-lg">↑ 18% this week</div>
+              <div class="kpi-num-lg" id="kpi-pending-tasks">0</div>
+              <div class="kpi-label-lg">Pending Tasks</div>
             </div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-icon-lg warm">🏠</div>
+            <div class="kpi-icon-lg warm">🏆</div>
             <div>
-              <div class="kpi-num-lg">12</div>
-              <div class="kpi-label-lg">Deals Closed</div>
-              <div class="kpi-change-lg">↑ 20% this month</div>
+              <div class="kpi-num-lg" id="kpi-strong-matches">0</div>
+              <div class="kpi-label-lg">Strong Matches</div>
             </div>
           </div>
         </div>
 
-        <!-- ROW 1: Sources / Activity / Conversations -->
-        <div class="dash-row r1">
+        <!-- Single dashboard row: AI Assistant + Latest Leads -->
+        <div class="dash-row r2">
 
-          <!-- Lead Sources -->
-          <div class="card">
-            <div class="card-h">
-              <div class="card-title">Lead Sources</div>
+          <div class="ai-asst">
+            <div class="ai-h">
+              <div class="ai-icon">R</div>
+              <h3>AI Assistant</h3>
             </div>
-            <div class="donut-wrap">
-              <div class="donut">
-                <svg width="130" height="130" viewBox="0 0 36 36">
-                  <circle cx="18" cy="18" r="15.915" fill="none" stroke="#1a2540" stroke-width="3"></circle>
-                  <circle cx="18" cy="18" r="15.915" fill="none" stroke="#00d4ff" stroke-width="3" stroke-dasharray="35 65" stroke-dashoffset="25"></circle>
-                  <circle cx="18" cy="18" r="15.915" fill="none" stroke="#a78bfa" stroke-width="3" stroke-dasharray="28 72" stroke-dashoffset="-10"></circle>
-                  <circle cx="18" cy="18" r="15.915" fill="none" stroke="#2dd4a0" stroke-width="3" stroke-dasharray="20 80" stroke-dashoffset="-38"></circle>
-                  <circle cx="18" cy="18" r="15.915" fill="none" stroke="#ffb547" stroke-width="3" stroke-dasharray="10 90" stroke-dashoffset="-58"></circle>
-                  <circle cx="18" cy="18" r="15.915" fill="none" stroke="#f472b6" stroke-width="3" stroke-dasharray="7 93" stroke-dashoffset="-68"></circle>
-                </svg>
-                <div class="donut-center">
-                  <div class="big">247</div>
-                  <div class="lbl">Total</div>
-                </div>
-              </div>
-              <div class="donut-legend">
-                <div class="legend-item" style="--clr: #00d4ff"><span class="left">Facebook Ads</span><span class="right">35%</span></div>
-                <div class="legend-item" style="--clr: #a78bfa"><span class="left">Google Ads</span><span class="right">28%</span></div>
-                <div class="legend-item" style="--clr: #2dd4a0"><span class="left">Website</span><span class="right">20%</span></div>
-                <div class="legend-item" style="--clr: #ffb547"><span class="left">Zillow</span><span class="right">10%</span></div>
-                <div class="legend-item" style="--clr: #f472b6"><span class="left">Other</span><span class="right">7%</span></div>
-              </div>
+            <div class="ai-sub">Run a deal, score leads, or open the analyzer.</div>
+            <div class="ai-suggest">
+              <button class="ai-chip" onclick="switchView('ai-tools')"><span class="ai-chip-icon">📊</span> Open the Deal Analyzer</button>
+              <button class="ai-chip" onclick="switchView('deal-finder')"><span class="ai-chip-icon">📂</span> Import leads (CSV)</button>
+              <button class="ai-chip" onclick="switchView('buy-box')"><span class="ai-chip-icon">🎯</span> Set up your buy box</button>
             </div>
           </div>
 
-          <!-- Lead Activity Chart -->
-          <div class="card" style="position: relative;">
-            <div class="card-h">
-              <div class="card-title">Lead Activity</div>
-              <button class="card-filter">This Week ▾</button>
-            </div>
-            <svg class="chart-svg" viewBox="0 0 400 140" preserveAspectRatio="none">
-              <defs>
-                <linearGradient id="chartGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stop-color="#00d4ff" stop-opacity="0.4"/>
-                  <stop offset="100%" stop-color="#00d4ff" stop-opacity="0"/>
-                </linearGradient>
-              </defs>
-              <!-- Grid lines -->
-              <line x1="0" y1="35" x2="400" y2="35" stroke="#1a2540" stroke-width="1" stroke-dasharray="2 4"/>
-              <line x1="0" y1="70" x2="400" y2="70" stroke="#1a2540" stroke-width="1" stroke-dasharray="2 4"/>
-              <line x1="0" y1="105" x2="400" y2="105" stroke="#1a2540" stroke-width="1" stroke-dasharray="2 4"/>
-              <!-- Filled area -->
-              <path d="M 0 110 L 57 85 L 114 95 L 171 70 L 228 60 L 285 30 L 342 50 L 400 75 L 400 140 L 0 140 Z" fill="url(#chartGrad)"/>
-              <!-- Line -->
-              <path d="M 0 110 L 57 85 L 114 95 L 171 70 L 228 60 L 285 30 L 342 50 L 400 75" stroke="#00d4ff" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-              <!-- Points -->
-              <circle cx="0" cy="110" r="3" fill="#00d4ff"/>
-              <circle cx="57" cy="85" r="3" fill="#00d4ff"/>
-              <circle cx="114" cy="95" r="3" fill="#00d4ff"/>
-              <circle cx="171" cy="70" r="3" fill="#00d4ff"/>
-              <circle cx="228" cy="60" r="3" fill="#00d4ff"/>
-              <circle cx="285" cy="30" r="4" fill="#4ee2ff" stroke="#0a0f1c" stroke-width="2"/>
-              <circle cx="342" cy="50" r="3" fill="#00d4ff"/>
-              <circle cx="400" cy="75" r="3" fill="#00d4ff"/>
-            </svg>
-            <div class="chart-labels">
-              <div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div><div>Sun</div>
-            </div>
-            <div class="chart-peak" style="top: 50px; left: 65%;">
-              <div class="v">75 Leads</div>
-              <div style="font-size: 0.65rem; color: var(--text-mid);">Sat peak</div>
-            </div>
-          </div>
-
-          <!-- Conversations -->
           <div class="card">
             <div class="card-h">
-              <div class="card-title">Latest Leads</div>
-              <button class="card-filter">All ▾</button>
+              <div class="card-title">Latest Imported Leads</div>
             </div>
             <div id="dash-leads-list" class="conv-list">
               <!-- JS populated -->
             </div>
-            <button class="view-all-btn" onclick="switchView('leads')">View All Leads</button>
-          </div>
-
-        </div>
-
-        <!-- ROW 2: Pipeline / Recent Deals / AI + Tasks -->
-        <div class="dash-row r2">
-
-          <!-- Pipeline Overview -->
-          <div class="card">
-            <div class="card-h">
-              <div class="card-title">Pipeline Overview</div>
-            </div>
-            <div class="pipeline-grid">
-              <div class="pipe-stage">
-                <div class="ps-name">New Leads</div>
-                <div class="ps-count">87 Leads</div>
-                <div class="ps-val">$2.1M</div>
-                <div class="pipe-bar"><div class="pipe-bar-fill" style="width: 100%"></div></div>
-              </div>
-              <div class="pipe-stage">
-                <div class="ps-name">Contacted</div>
-                <div class="ps-count">64 Leads</div>
-                <div class="ps-val">$1.6M</div>
-                <div class="pipe-bar"><div class="pipe-bar-fill" style="width: 73%"></div></div>
-              </div>
-              <div class="pipe-stage">
-                <div class="ps-name">Qualified</div>
-                <div class="ps-count">27 Leads</div>
-                <div class="ps-val">$2.3M</div>
-                <div class="pipe-bar"><div class="pipe-bar-fill" style="width: 51%"></div></div>
-              </div>
-              <div class="pipe-stage">
-                <div class="ps-name">Proposal</div>
-                <div class="ps-count">14 Leads</div>
-                <div class="ps-val">$1.2M</div>
-                <div class="pipe-bar"><div class="pipe-bar-fill" style="width: 32%"></div></div>
-              </div>
-              <div class="pipe-stage">
-                <div class="ps-name">Closed Won</div>
-                <div class="ps-count">12 Leads</div>
-                <div class="ps-val">$1.8M</div>
-                <div class="pipe-bar"><div class="pipe-bar-fill" style="width: 22%"></div></div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Recent Deals -->
-          <div class="card">
-            <div class="card-h">
-              <div class="card-title">Recent Deals</div>
-            </div>
-            <div>
-              <div class="deal-row">
-                <div class="da">123 Main Street</div>
-                <div class="dp">$450,000</div>
-                <div class="ds under-contract">Under Contract</div>
-              </div>
-              <div class="deal-row">
-                <div class="da">456 Oak Avenue</div>
-                <div class="dp">$375,000</div>
-                <div class="ds proposal">Proposal Sent</div>
-              </div>
-              <div class="deal-row">
-                <div class="da">789 Pine Road</div>
-                <div class="dp">$620,000</div>
-                <div class="ds new">New Lead</div>
-              </div>
-              <div class="deal-row">
-                <div class="da">321 Elm Drive</div>
-                <div class="dp">$289,000</div>
-                <div class="ds showing">Showing Scheduled</div>
-              </div>
-            </div>
-            <button class="view-all-btn">View All Deals</button>
-          </div>
-
-          <!-- AI Assistant + Tasks -->
-          <div style="display: flex; flex-direction: column; gap: 1rem;">
-
-            <div class="ai-asst">
-              <div class="ai-h">
-                <div class="ai-icon">R</div>
-                <h3>AI Assistant</h3>
-              </div>
-              <div class="ai-sub">How can I help you today?</div>
-              <div class="ai-suggest">
-                <button class="ai-chip" onclick="goToTools('scoring')"><span class="ai-chip-icon">🎯</span> Score an incoming lead</button>
-                <button class="ai-chip" onclick="goToTools('valuation')"><span class="ai-chip-icon">🏠</span> Generate a home valuation</button>
-                <button class="ai-chip" onclick="goToTools('investor')"><span class="ai-chip-icon">📊</span> Screen an investor deal</button>
-              </div>
-              <div class="ai-input-wrap">
-                <input type="text" placeholder="Ask anything..." onkeydown="if(event.key==='Enter') goToTools('scoring')">
-                <button class="ai-send">→</button>
-              </div>
-            </div>
-
-            <div class="card" style="padding: 1rem 1.25rem;">
-              <div class="card-h" style="margin-bottom: 0.65rem;">
-                <div class="card-title">Tasks · Today</div>
-              </div>
-              <div class="task-list">
-                <div class="task-item">
-                  <div class="task-check" onclick="this.classList.toggle('done'); this.parentElement.querySelector('.task-text').classList.toggle('done')"></div>
-                  <div class="task-text">Follow up with John D.</div>
-                  <div class="task-time">9:00 AM</div>
-                </div>
-                <div class="task-item">
-                  <div class="task-check" onclick="this.classList.toggle('done'); this.parentElement.querySelector('.task-text').classList.toggle('done')"></div>
-                  <div class="task-text">Call new lead: Sarah M.</div>
-                  <div class="task-time">10:30 AM</div>
-                </div>
-                <div class="task-item">
-                  <div class="task-check" onclick="this.classList.toggle('done'); this.parentElement.querySelector('.task-text').classList.toggle('done')"></div>
-                  <div class="task-text">Listing appointment</div>
-                  <div class="task-time">12:00 PM</div>
-                </div>
-                <div class="task-item">
-                  <div class="task-check" onclick="this.classList.toggle('done'); this.parentElement.querySelector('.task-text').classList.toggle('done')"></div>
-                  <div class="task-text">Send market report</div>
-                  <div class="task-time">2:00 PM</div>
-                </div>
-              </div>
-            </div>
-
+            <button class="view-all-btn" onclick="switchView('deal-finder')">Open Lead Importer</button>
           </div>
 
         </div>
@@ -2996,6 +2809,8 @@
 
     // Fetch user specific data
     await syncFromSupabase();
+    // Load investor leads (Session 4+) so the dashboard KPIs reflect real data
+    try { await liLoad(); } catch(e) { console.warn('liLoad on auth failed:', e); }
 
     updateUserUI();
     updateDashboardKPIs();
@@ -3594,43 +3409,55 @@ SOURCE: ${source}
 
   function updateDashboardKPIs() {
     updateDatePill();
-    const leadsCount = rwData.leads.length;
-    const tasksCount = rwData.tasks.filter(t => !t.done).length;
+    const leads = Array.isArray(liLeads) ? liLeads : [];
+    const importedCount = leads.length;
+    const scoredCount   = leads.filter(l => l.buyBoxLabel !== null && l.buyBoxLabel !== undefined).length;
+    const strongCount   = leads.filter(l => l.buyBoxLabel === 'strong').length;
+    const tasksCount    = rwData.tasks.filter(t => !t.done).length;
 
-    // For demo purposes, we'll keep some of the fake numbers or make them slightly more dynamic
-    document.querySelector('.kpi-card:nth-child(1) .kpi-num-lg').textContent = leadsCount || '0';
-    document.querySelector('.kpi-card:nth-child(3) .kpi-num-lg').textContent = tasksCount || '0';
-    document.querySelector('.kpi-card:nth-child(3) .kpi-label-lg').textContent = 'Pending Tasks';
+    const setKPI = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = String(val);
+    };
+    setKPI('kpi-imported-leads', importedCount);
+    setKPI('kpi-scored', scoredCount);
+    setKPI('kpi-pending-tasks', tasksCount);
+    setKPI('kpi-strong-matches', strongCount);
 
-    // Update Latest Leads on Dashboard
+    // Latest Imported Leads tile (compact investor view: address + value + buy-box badge)
     const dashLeadsList = document.getElementById('dash-leads-list');
     if (dashLeadsList) {
-      dashLeadsList.innerHTML = rwData.leads.slice(0, 5).map(lead => {
-        const initials = lead.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-        const timeAgo = Math.floor((Date.now() - new Date(lead.created)) / 60000);
-        return `
-          <div class="conv-item" onclick="switchView('leads')">
-            <div class="conv-avatar" style="background: var(--cyan-soft); color: var(--cyan); border: 1px solid var(--cyan-border);">${initials}</div>
-            <div class="conv-text">
-              <div class="conv-name-row"><span class="conv-name">${lead.name}</span><span class="conv-time">${timeAgo}m</span></div>
-              <div class="conv-msg">${lead.message || 'No message provided.'}</div>
-            </div>
-            ${lead.score === 'HOT' ? '<div class="conv-status"></div>' : ''}
+      if (leads.length === 0) {
+        dashLeadsList.innerHTML = `
+          <div style="padding:1.5rem 1rem; text-align:center; color:var(--text-muted); font-size:13px;">
+            No leads yet.<br>
+            <span style="font-size:12px;">Import a CSV in the Lead Importer to get started.</span>
           </div>
         `;
-      }).join('');
-    }
-
-    // Update Recent Deals with leads that have been added
-    const recentDealsList = document.querySelector('#view-dashboard .dash-row.r2 .card:nth-child(2) div');
-    if (recentDealsList && rwData.leads.length > 0) {
-      recentDealsList.innerHTML = rwData.leads.slice(0, 4).map(lead => `
-        <div class="deal-row">
-          <div class="da">${lead.name}</div>
-          <div class="dp">${lead.source}</div>
-          <div class="ds ${(lead.score || 'NEW').toLowerCase().replace(' ', '-')}">${lead.score || 'NEW'}</div>
-        </div>
-      `).join('');
+      } else {
+        const fmtVal = n => n ? '$' + Number(n).toLocaleString() : '—';
+        const badge = label => {
+          if (label === 'strong') return '<span style="color:#4ee2ff;font-size:11px;font-weight:500;">✓ Strong</span>';
+          if (label === 'near')   return '<span style="color:#ffc107;font-size:11px;font-weight:500;">~ Near</span>';
+          if (label === 'out')    return '<span style="color:#888;font-size:11px;">✗ Out</span>';
+          return '<span style="color:var(--text-muted);font-size:11px;">Unscored</span>';
+        };
+        dashLeadsList.innerHTML = leads.slice(0, 5).map(l => {
+          const addr = l.address
+            ? `${l.address}${l.city ? ', ' + l.city : ''}${l.state ? ' ' + l.state : ''}`
+            : `${l.city || ''}${l.state ? ' ' + l.state : ''}${l.zip ? ' ' + l.zip : ''}`.trim() || 'No address';
+          const initials = (addr.match(/[A-Z]/g) || ['L']).slice(0, 2).join('') || 'L';
+          return `
+            <div class="conv-item" onclick="switchView('deal-finder')">
+              <div class="conv-avatar" style="background: var(--cyan-soft); color: var(--cyan); border: 1px solid var(--cyan-border);">${initials}</div>
+              <div class="conv-text">
+                <div class="conv-name-row"><span class="conv-name">${addr}</span><span class="conv-time">${fmtVal(l.value)}</span></div>
+                <div class="conv-msg">${badge(l.buyBoxLabel)}${(l.signals && l.signals.length) ? ' · ' + l.signals.join(', ') : ''}</div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
     }
   }
 
