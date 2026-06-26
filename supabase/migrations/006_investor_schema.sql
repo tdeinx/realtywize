@@ -44,9 +44,10 @@ CREATE POLICY "Users manage own buy box"
 CREATE INDEX IF NOT EXISTS idx_buy_box_user ON buy_box_profiles(user_id);
 
 -- -------------------------------------------------------
--- 3. leads
+-- 3. investor_leads  (renamed from "leads" to avoid
+--    collision with the existing realtor-era leads table)
 -- -------------------------------------------------------
-CREATE TABLE IF NOT EXISTS leads (
+CREATE TABLE IF NOT EXISTS investor_leads (
   id               uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id          uuid NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   address          text,
@@ -62,7 +63,7 @@ CREATE TABLE IF NOT EXISTS leads (
   sqft             int,
   prop_type        text,
   signals          text[],
-  buy_box_label    text CHECK (buy_box_label IN ('strong','near','out',NULL)),
+  buy_box_label    text CHECK (buy_box_label IS NULL OR buy_box_label IN ('strong','near','out')),
   buy_box_score    numeric,
   buy_box_hard_fails  text[],
   buy_box_near_misses text[],
@@ -72,15 +73,15 @@ CREATE TABLE IF NOT EXISTS leads (
   updated_at       timestamptz DEFAULT now()
 );
 
-ALTER TABLE leads ENABLE ROW LEVEL SECURITY;
+ALTER TABLE investor_leads ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users manage own leads"
-  ON leads FOR ALL
+CREATE POLICY "Users manage own investor leads"
+  ON investor_leads FOR ALL
   USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
 
-CREATE INDEX IF NOT EXISTS idx_leads_user    ON leads(user_id);
-CREATE INDEX IF NOT EXISTS idx_leads_bbox    ON leads(user_id, buy_box_label);
+CREATE INDEX IF NOT EXISTS idx_investor_leads_user ON investor_leads(user_id);
+CREATE INDEX IF NOT EXISTS idx_investor_leads_bbox ON investor_leads(user_id, buy_box_label);
 
 -- -------------------------------------------------------
 -- 4. deal_analyses
@@ -88,7 +89,7 @@ CREATE INDEX IF NOT EXISTS idx_leads_bbox    ON leads(user_id, buy_box_label);
 CREATE TABLE IF NOT EXISTS deal_analyses (
   id               uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id          uuid NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  lead_id          uuid REFERENCES leads(id) ON DELETE SET NULL,
+  lead_id          uuid REFERENCES investor_leads(id) ON DELETE SET NULL,
   address          text,
   -- inputs
   price            numeric,
@@ -152,7 +153,7 @@ CREATE INDEX IF NOT EXISTS idx_analyses_lead ON deal_analyses(lead_id);
 CREATE TABLE IF NOT EXISTS pipeline_stages (
   id               uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id          uuid NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  lead_id          uuid REFERENCES leads(id) ON DELETE CASCADE,
+  lead_id          uuid REFERENCES investor_leads(id) ON DELETE CASCADE,
   analysis_id      uuid REFERENCES deal_analyses(id) ON DELETE SET NULL,
   stage            text NOT NULL CHECK (stage IN ('prospect','offer','under_contract','closed','passed')),
   offer_price      numeric,
@@ -177,7 +178,7 @@ CREATE INDEX IF NOT EXISTS idx_pipeline_stage ON pipeline_stages(user_id, stage)
 CREATE TABLE IF NOT EXISTS portfolio (
   id               uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id          uuid NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  lead_id          uuid REFERENCES leads(id) ON DELETE SET NULL,
+  lead_id          uuid REFERENCES investor_leads(id) ON DELETE SET NULL,
   analysis_id      uuid REFERENCES deal_analyses(id) ON DELETE SET NULL,
   address          text,
   city             text,
@@ -220,8 +221,8 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 DO $$ BEGIN
-  CREATE TRIGGER trg_leads_updated_at
-    BEFORE UPDATE ON leads
+  CREATE TRIGGER trg_investor_leads_updated_at
+    BEFORE UPDATE ON investor_leads
     FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 

@@ -75,7 +75,7 @@ exports.handler = async (event) => {
     // ---- LEADS ----
     if (action === 'get_leads') {
       const { data, error } = await supabase
-        .from('leads')
+        .from('investor_leads')
         .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
@@ -107,7 +107,7 @@ exports.handler = async (event) => {
         buy_box_near_misses: l.buyBoxNearMisses || [],
         source:              l.source || 'csv'
       }));
-      const { error } = await supabase.from('leads').insert(records);
+      const { error } = await supabase.from('investor_leads').insert(records);
       if (error) throw error;
       return { statusCode: 200, headers, body: JSON.stringify({ ok: true, count: records.length }) };
     }
@@ -115,7 +115,7 @@ exports.handler = async (event) => {
     if (action === 'update_lead') {
       const { leadId, updates } = payload;
       const { error } = await supabase
-        .from('leads')
+        .from('investor_leads')
         .update(updates)
         .eq('id', leadId)
         .eq('user_id', userId);
@@ -125,7 +125,7 @@ exports.handler = async (event) => {
 
     if (action === 'delete_leads') {
       const { error } = await supabase
-        .from('leads')
+        .from('investor_leads')
         .delete()
         .eq('user_id', userId);
       if (error) throw error;
