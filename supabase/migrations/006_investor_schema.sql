@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS buy_box_profiles (
 
 ALTER TABLE buy_box_profiles ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users manage own buy box" ON buy_box_profiles;
 CREATE POLICY "Users manage own buy box"
   ON buy_box_profiles FOR ALL
   USING (auth.uid() = user_id)
@@ -75,6 +76,7 @@ CREATE TABLE IF NOT EXISTS investor_leads (
 
 ALTER TABLE investor_leads ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users manage own investor leads" ON investor_leads;
 CREATE POLICY "Users manage own investor leads"
   ON investor_leads FOR ALL
   USING (auth.uid() = user_id)
@@ -139,6 +141,7 @@ CREATE TABLE IF NOT EXISTS deal_analyses (
 
 ALTER TABLE deal_analyses ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users manage own analyses" ON deal_analyses;
 CREATE POLICY "Users manage own analyses"
   ON deal_analyses FOR ALL
   USING (auth.uid() = user_id)
@@ -164,6 +167,7 @@ CREATE TABLE IF NOT EXISTS pipeline_stages (
 
 ALTER TABLE pipeline_stages ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users manage own pipeline" ON pipeline_stages;
 CREATE POLICY "Users manage own pipeline"
   ON pipeline_stages FOR ALL
   USING (auth.uid() = user_id)
@@ -196,6 +200,7 @@ CREATE TABLE IF NOT EXISTS portfolio (
 
 ALTER TABLE portfolio ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users manage own portfolio" ON portfolio;
 CREATE POLICY "Users manage own portfolio"
   ON portfolio FOR ALL
   USING (auth.uid() = user_id)
