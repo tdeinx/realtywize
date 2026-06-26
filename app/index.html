@@ -1653,6 +1653,7 @@
       <button class="sb-item" data-view="tasks"><span class="sb-icon">✓</span> Tasks</button>
       <button class="sb-item" data-view="deal-finder"><span class="sb-icon">🎯</span> Lead Importer</button>
       <button class="sb-item" data-view="buy-box"><span class="sb-icon">🎯</span> Buy Box</button>
+      <button class="sb-item" data-view="exit-modeler"><span class="sb-icon">🔀</span> Exit Modeler</button>
       <button class="sb-item" data-view="ai-tools"><span class="sb-icon">🤖</span> Deal Analyzer</button>
       <button class="sb-item" data-view="settings"><span class="sb-icon">⚙️</span> Settings</button>
 
@@ -2394,6 +2395,117 @@
         </div>
       </div>
 
+      <!-- ============ EXIT MODELER VIEW ============ -->
+      <div class="view" id="view-exit-modeler">
+
+        <div class="tool-panel-header">
+          <h2>Exit Modeler · One deal, four exits, side by side.</h2>
+          <p>Enter the deal once. Realtywize models Flip, BRRRR, Wholesale, and Buy &amp; Hold in parallel — so you can see which exit makes you the most money before you commit. Address is optional.</p>
+        </div>
+
+        <div class="work-grid">
+
+          <div class="work-card">
+            <div class="card-label">Deal Inputs</div>
+
+            <label>Property Address (optional)</label>
+            <input type="text" id="em-address" placeholder="e.g. 812 N Brevard St, Charlotte NC">
+
+            <div class="card-label" style="margin-top:1rem;">Acquisition</div>
+            <div class="input-row">
+              <div>
+                <label>Purchase Price</label>
+                <input type="number" id="em-price" placeholder="120000">
+              </div>
+              <div>
+                <label>Rehab Budget</label>
+                <input type="number" id="em-rehab" placeholder="35000">
+              </div>
+            </div>
+            <div class="input-row">
+              <div>
+                <label>ARV — After Repair Value</label>
+                <input type="number" id="em-arv" placeholder="210000">
+              </div>
+              <div>
+                <label>Rehab Timeline (months)</label>
+                <input type="number" id="em-months" placeholder="4">
+              </div>
+            </div>
+
+            <div class="card-label" style="margin-top:1rem;">Financing</div>
+            <div class="input-row">
+              <div>
+                <label>Down Payment %</label>
+                <input type="number" id="em-down-pct" placeholder="20">
+              </div>
+              <div>
+                <label>Interest Rate %</label>
+                <input type="number" id="em-rate" placeholder="9" step="0.1">
+              </div>
+            </div>
+            <div class="input-row">
+              <div>
+                <label>Loan Term (years)</label>
+                <input type="number" id="em-term" placeholder="30">
+              </div>
+              <div>
+                <label>Closing Costs</label>
+                <input type="number" id="em-closing" placeholder="4000">
+              </div>
+            </div>
+
+            <div class="card-label" style="margin-top:1rem;">Rental Income (for BRRRR &amp; Hold)</div>
+            <div class="input-row">
+              <div>
+                <label>Expected Monthly Rent</label>
+                <input type="number" id="em-rent" placeholder="1800">
+              </div>
+              <div>
+                <label>Monthly Operating Expenses</label>
+                <input type="number" id="em-opex" placeholder="650">
+              </div>
+            </div>
+
+            <div class="card-label" style="margin-top:1rem;">Strategy Assumptions</div>
+            <div class="input-row">
+              <div>
+                <label>Selling Costs % (flip exit)</label>
+                <input type="number" id="em-sell-pct" placeholder="8" step="0.5">
+              </div>
+              <div>
+                <label>Refi LTV % (BRRRR)</label>
+                <input type="number" id="em-refi-ltv" placeholder="75" step="1">
+              </div>
+            </div>
+            <div class="input-row">
+              <div>
+                <label>Wholesale Assignment Fee</label>
+                <input type="number" id="em-assign-fee" placeholder="12000">
+              </div>
+              <div>
+                <label>Appreciation % / yr (hold)</label>
+                <input type="number" id="em-appreciation" placeholder="3.5" step="0.1">
+              </div>
+            </div>
+
+            <button class="btn-analyze" onclick="runExitModeler()" id="em-btn">Model All Exits →</button>
+            <div id="em-error"></div>
+          </div>
+
+          <div class="work-card">
+            <div class="card-label">Exit Comparison</div>
+            <div id="em-result">
+              <div class="result-placeholder">
+                <div class="icon">🔀</div>
+                <p>Enter your deal numbers and model<br>all four exits side by side.</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
       <!-- ============ DEAL FINDER DETAIL DRAWER ============ -->
       <div class="df-drawer-backdrop" id="df-drawer-backdrop" onclick="closeDrawer()"></div>
       <aside class="df-drawer" id="df-drawer">
@@ -2943,6 +3055,7 @@
     'analytics': 'Analytics',
     'ai-tools': 'AI Assistant',
     'buy-box': 'Buy Box',
+    'exit-modeler': 'Exit Modeler',
     'deal-finder': 'Lead Importer',
     'settings': 'Settings',
     'admin-users': 'User Management'
@@ -4621,6 +4734,241 @@ Return ONLY the JSON object.`;
     } catch(err) {
       console.error('Migration error (non-fatal):', err);
       // Do not set migrated flag — will retry on next login
+    }
+  }
+
+  // ============================================================
+  // ============ EXIT MODELER ==================================
+  // ============================================================
+
+  function emMonthlyPayment(loanAmt, ratePct, termYears) {
+    if (ratePct <= 0 || loanAmt <= 0) return 0;
+    const r = (ratePct / 100) / 12;
+    const n = termYears * 12;
+    return loanAmt * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+  }
+
+  function runExitModeler() {
+    const v = id => parseFloat(document.getElementById(id).value) || 0;
+    const address    = document.getElementById('em-address').value.trim();
+    const price      = v('em-price');
+    const rehab      = v('em-rehab');
+    const arv        = v('em-arv');
+    const months     = v('em-months') || 4;
+    const downPct    = v('em-down-pct') || 20;
+    const rate       = v('em-rate');
+    const term       = v('em-term') || 30;
+    const closing    = v('em-closing');
+    const rent       = v('em-rent');
+    const opex       = v('em-opex');
+    const sellPct    = v('em-sell-pct') || 8;
+    const refiLtv    = v('em-refi-ltv') || 75;
+    const assignFee  = v('em-assign-fee');
+    const appreciation = v('em-appreciation') || 3.5;
+
+    const errBox = document.getElementById('em-error');
+    const result = document.getElementById('em-result');
+    errBox.innerHTML = '';
+
+    if (!price || !arv) {
+      errBox.innerHTML = '<div class="error">Please enter at least a purchase price and ARV.</div>';
+      return;
+    }
+
+    const fmt = n => (n < 0 ? '-$' : '$') + Math.abs(Math.round(n)).toLocaleString();
+    const pct = n => n.toFixed(1) + '%';
+
+    // ---- Shared acquisition numbers ----
+    const downAmt   = price * (downPct / 100);
+    const loanAmt   = price - downAmt;
+    const monthlyPI = emMonthlyPayment(loanAmt, rate, term);
+
+    // =========================================================
+    // FLIP
+    // =========================================================
+    const flipHoldingCosts = (monthlyPI * months) + (opex * months);
+    const flipSellingCosts = arv * (sellPct / 100);
+    const flipTotalCost    = price + rehab + closing + flipHoldingCosts + flipSellingCosts;
+    const flipProfit       = arv - flipTotalCost;
+    const flipCashIn       = downAmt + rehab + closing + flipHoldingCosts;
+    const flipROI          = flipCashIn > 0 ? (flipProfit / flipCashIn) * 100 : 0;
+    const flipAnnualized   = months > 0 ? flipROI * (12 / months) : flipROI;
+
+    // =========================================================
+    // BRRRR
+    // =========================================================
+    const refiLoanAmt    = arv * (refiLtv / 100);
+    const totalInvested  = downAmt + rehab + closing;
+    const cashPulledOut  = refiLoanAmt - loanAmt;
+    const cashLeftIn     = totalInvested - cashPulledOut;
+    const refiPI         = emMonthlyPayment(refiLoanAmt, rate, term);
+    const brrrrCashFlow  = rent - opex - refiPI;
+    const brrrrAnnualCF  = brrrrCashFlow * 12;
+    const brrrrCoC       = cashLeftIn > 0 ? (brrrrAnnualCF / cashLeftIn) * 100 : (brrrrAnnualCF > 0 ? Infinity : 0);
+
+    // =========================================================
+    // WHOLESALE
+    // =========================================================
+    const wholesaleMarketingCost = 2000; // estimated marketing + earnest
+    const wholesaleProfit        = assignFee - wholesaleMarketingCost;
+    const wholesaleROI           = wholesaleMarketingCost > 0 ? (wholesaleProfit / wholesaleMarketingCost) * 100 : 0;
+
+    // =========================================================
+    // BUY & HOLD
+    // =========================================================
+    const holdCashFlow   = rent - opex - monthlyPI;
+    const holdAnnualCF   = holdCashFlow * 12;
+    const holdCashIn     = downAmt + rehab + closing;
+    const holdCoC        = holdCashIn > 0 ? (holdAnnualCF / holdCashIn) * 100 : 0;
+    // 5-year wealth build
+    const yr5Value       = arv * Math.pow(1 + appreciation / 100, 5);
+    const yr5Appreciation= yr5Value - arv;
+    let loanBalance5yr   = loanAmt;
+    const rMo = (rate / 100) / 12;
+    for (let m = 0; m < 60 && rMo > 0; m++) {
+      const interest = loanBalance5yr * rMo;
+      const principal = monthlyPI - interest;
+      loanBalance5yr -= principal;
+    }
+    const debtPaydown5yr = loanAmt - Math.max(0, loanBalance5yr);
+    const total5yrWealth = (holdAnnualCF * 5) + yr5Appreciation + debtPaydown5yr;
+
+    // ---- Determine best exit by profit ----
+    const exits = [
+      { name: 'Flip',       profit: flipProfit,      sub: 'one-time' },
+      { name: 'Wholesale',  profit: wholesaleProfit, sub: 'one-time' },
+      { name: 'BRRRR',      profit: total5yrWealth,  sub: '5-yr wealth (cash left in: ' + fmt(cashLeftIn) + ')' },
+      { name: 'Buy & Hold', profit: total5yrWealth,  sub: '5-yr wealth' }
+    ];
+    const bestOneTime = flipProfit > wholesaleProfit ? 'Flip' : 'Wholesale';
+
+    const cocDisplay = n => n === Infinity ? '∞ (infinite)' : pct(n);
+
+    result.innerHTML = `
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:1rem;">
+
+        <div class="em-exit-card" style="border:0.5px solid var(--border); border-radius:10px; padding:1rem; background:rgba(255,255,255,0.02);">
+          <div style="font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:#4ee2ff; margin-bottom:6px;">🔨 Flip</div>
+          <div style="font-size:22px; font-weight:600; color:${flipProfit >= 0 ? 'var(--white)' : '#ff6b6b'}; margin-bottom:4px;">${fmt(flipProfit)}</div>
+          <div style="font-size:11px; color:var(--text-muted); margin-bottom:8px;">net profit</div>
+          <div style="font-size:12px; color:var(--text-muted); line-height:1.7;">
+            ROI on cash: <span style="color:var(--white)">${pct(flipROI)}</span><br>
+            Annualized: <span style="color:var(--white)">${pct(flipAnnualized)}</span><br>
+            Holding costs: <span style="color:var(--white)">${fmt(flipHoldingCosts)}</span><br>
+            Cash needed: <span style="color:var(--white)">${fmt(flipCashIn)}</span>
+          </div>
+        </div>
+
+        <div class="em-exit-card" style="border:0.5px solid var(--border); border-radius:10px; padding:1rem; background:rgba(255,255,255,0.02);">
+          <div style="font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:#4ee2ff; margin-bottom:6px;">🔄 BRRRR</div>
+          <div style="font-size:22px; font-weight:600; color:${cashLeftIn <= 0 ? '#4ee2ff' : 'var(--white)'}; margin-bottom:4px;">${fmt(cashLeftIn)}</div>
+          <div style="font-size:11px; color:var(--text-muted); margin-bottom:8px;">left in deal ${cashLeftIn <= 0 ? '(all cash recovered!)' : ''}</div>
+          <div style="font-size:12px; color:var(--text-muted); line-height:1.7;">
+            Cash pulled out: <span style="color:var(--white)">${fmt(cashPulledOut)}</span><br>
+            Refi loan: <span style="color:var(--white)">${fmt(refiLoanAmt)}</span><br>
+            Monthly cash flow: <span style="color:${brrrrCashFlow >= 0 ? 'var(--white)' : '#ff6b6b'}">${fmt(brrrrCashFlow)}</span><br>
+            Cash-on-cash: <span style="color:var(--white)">${cocDisplay(brrrrCoC)}</span>
+          </div>
+        </div>
+
+        <div class="em-exit-card" style="border:0.5px solid var(--border); border-radius:10px; padding:1rem; background:rgba(255,255,255,0.02);">
+          <div style="font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:#4ee2ff; margin-bottom:6px;">📦 Wholesale</div>
+          <div style="font-size:22px; font-weight:600; color:${wholesaleProfit >= 0 ? 'var(--white)' : '#ff6b6b'}; margin-bottom:4px;">${fmt(wholesaleProfit)}</div>
+          <div style="font-size:11px; color:var(--text-muted); margin-bottom:8px;">assignment profit</div>
+          <div style="font-size:12px; color:var(--text-muted); line-height:1.7;">
+            Assignment fee: <span style="color:var(--white)">${fmt(assignFee)}</span><br>
+            Est. costs: <span style="color:var(--white)">${fmt(wholesaleMarketingCost)}</span><br>
+            Speed: <span style="color:var(--white)">fastest exit</span><br>
+            Risk: <span style="color:var(--white)">lowest</span>
+          </div>
+        </div>
+
+        <div class="em-exit-card" style="border:0.5px solid var(--border); border-radius:10px; padding:1rem; background:rgba(255,255,255,0.02);">
+          <div style="font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:#4ee2ff; margin-bottom:6px;">🏠 Buy &amp; Hold</div>
+          <div style="font-size:22px; font-weight:600; color:${total5yrWealth >= 0 ? 'var(--white)' : '#ff6b6b'}; margin-bottom:4px;">${fmt(total5yrWealth)}</div>
+          <div style="font-size:11px; color:var(--text-muted); margin-bottom:8px;">5-yr wealth build</div>
+          <div style="font-size:12px; color:var(--text-muted); line-height:1.7;">
+            Monthly cash flow: <span style="color:${holdCashFlow >= 0 ? 'var(--white)' : '#ff6b6b'}">${fmt(holdCashFlow)}</span><br>
+            Cash-on-cash: <span style="color:var(--white)">${pct(holdCoC)}</span><br>
+            5-yr appreciation: <span style="color:var(--white)">${fmt(yr5Appreciation)}</span><br>
+            5-yr debt paydown: <span style="color:var(--white)">${fmt(debtPaydown5yr)}</span>
+          </div>
+        </div>
+
+      </div>
+
+      <div style="border-top:0.5px solid var(--border); padding-top:1rem;">
+        <div style="font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted); margin-bottom:8px;">Quick read</div>
+        <div style="font-size:13px; color:var(--white); line-height:1.7;">
+          Best quick-cash exit: <strong style="color:#4ee2ff;">${bestOneTime}</strong> (${fmt(Math.max(flipProfit, wholesaleProfit))})<br>
+          ${cashLeftIn <= 0 ? 'BRRRR recovers all your capital — strongest long-term play if the refi appraises.' : 'BRRRR leaves ' + fmt(cashLeftIn) + ' in the deal but builds long-term wealth.'}<br>
+          Buy &amp; Hold 5-yr wealth: <strong style="color:var(--white);">${fmt(total5yrWealth)}</strong> ${holdCashFlow < 0 ? '(but negative monthly cash flow — caution)' : ''}
+        </div>
+        <button class="btn-analyze" onclick="emAiSummary()" id="em-ai-btn" style="margin-top:1rem;">🤖 Get AI Recommendation →</button>
+        <div id="em-ai-result" style="margin-top:1rem;"></div>
+      </div>
+    `;
+
+    // Stash current numbers for the AI summary
+    window._emLast = {
+      address, price, rehab, arv, months, rent, opex,
+      flipProfit, flipROI, flipAnnualized,
+      cashLeftIn, cashPulledOut, brrrrCashFlow, brrrrCoC,
+      wholesaleProfit, assignFee,
+      holdCashFlow, holdCoC, total5yrWealth, debtPaydown5yr, yr5Appreciation
+    };
+  }
+
+  async function emAiSummary() {
+    const d = window._emLast;
+    if (!d) return;
+    const btn = document.getElementById('em-ai-btn');
+    const out = document.getElementById('em-ai-result');
+    btn.disabled = true;
+    btn.innerHTML = 'Thinking...';
+    out.innerHTML = '<div class="loading"><div class="spinner"></div><p>Analyzing best exit...</p></div>';
+
+    const fmt = n => (n < 0 ? '-$' : '$') + Math.abs(Math.round(n)).toLocaleString();
+    const cocStr = d.brrrrCoC === Infinity ? 'infinite' : d.brrrrCoC.toFixed(1) + '%';
+
+    const prompt = `You are Realtywize, an AI deal advisor for real estate investors. Based on these four modeled exit strategies for one property, give a clear recommendation on which exit to pursue.
+
+PROPERTY: ${d.address || 'Address not provided'}
+Purchase: ${fmt(d.price)} | Rehab: ${fmt(d.rehab)} | ARV: ${fmt(d.arv)}
+
+EXIT OUTCOMES:
+1. FLIP — Net profit ${fmt(d.flipProfit)}, ROI ${d.flipROI.toFixed(1)}%, annualized ${d.flipAnnualized.toFixed(1)}% over ${d.months} months
+2. BRRRR — Cash left in deal ${fmt(d.cashLeftIn)}, cash pulled out ${fmt(d.cashPulledOut)}, monthly cash flow ${fmt(d.brrrrCashFlow)}, cash-on-cash ${cocStr}
+3. WHOLESALE — Assignment profit ${fmt(d.wholesaleProfit)} (fast, low risk)
+4. BUY & HOLD — Monthly cash flow ${fmt(d.holdCashFlow)}, cash-on-cash ${d.holdCoC.toFixed(1)}%, 5-year wealth build ${fmt(d.total5yrWealth)}
+
+Respond with ONLY a JSON object (no markdown):
+{
+  "recommended_exit": "<Flip | BRRRR | Wholesale | Buy & Hold>",
+  "why": "<2-3 sentences — why this exit wins for this specific deal>",
+  "runner_up": "<second-best exit and the one tradeoff that separates it>",
+  "watch_out": "<the single biggest risk or assumption to validate before committing>"
+}
+
+Return ONLY the JSON object.`;
+
+    try {
+      const responseText = await callClaude(prompt, 600);
+      const data = parseJSON(responseText);
+      out.innerHTML = `
+        <div style="border:0.5px solid rgba(78,226,255,0.2); background:rgba(78,226,255,0.04); border-radius:10px; padding:1rem;">
+          <div style="font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:#4ee2ff; margin-bottom:6px;">Recommended exit</div>
+          <div style="font-size:18px; font-weight:600; color:var(--white); margin-bottom:8px;">${data.recommended_exit}</div>
+          <div style="font-size:13px; color:var(--text-muted); line-height:1.6; margin-bottom:10px;">${data.why}</div>
+          <div style="font-size:12px; color:var(--text-muted); line-height:1.6;"><strong style="color:var(--white)">Runner-up:</strong> ${data.runner_up}</div>
+          <div style="font-size:12px; color:var(--text-muted); line-height:1.6; margin-top:6px;"><strong style="color:#ffc107">Watch out:</strong> ${data.watch_out}</div>
+        </div>
+      `;
+    } catch(err) {
+      out.innerHTML = '<div class="error">Couldn\'t generate recommendation: ' + err.message + '</div>';
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '🤖 Get AI Recommendation →';
     }
   }
 
