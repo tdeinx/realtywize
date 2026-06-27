@@ -1700,6 +1700,7 @@
       <button class="sb-item" data-view="rehab"><span class="sb-icon">🔨</span> Rehab Estimator</button>
       <button class="sb-item" data-view="sensitivity"><span class="sb-icon">📉</span> Sensitivity</button>
       <button class="sb-item" data-view="deal-scout"><span class="sb-icon">🧠</span> Deal Scout</button>
+      <button class="sb-item" data-view="pipeline"><span class="sb-icon">📋</span> Pipeline</button>
       <button class="sb-item" data-view="portfolio"><span class="sb-icon">🏦</span> Portfolio</button>
       <button class="sb-item" data-view="ai-tools"><span class="sb-icon">🤖</span> Deal Analyzer</button>
       <button class="sb-item" data-view="settings"><span class="sb-icon">⚙️</span> Settings</button>
@@ -2696,6 +2697,58 @@
 
       </div>
 
+      <!-- ============ PIPELINE VIEW ============ -->
+      <div class="view" id="view-pipeline">
+
+        <div class="tool-panel-header">
+          <h2>Pipeline · Move deals from prospect to closed.</h2>
+          <p>Track every deal you're pursuing through its stages. Add deals here or send them from the Deal Analyzer. When one closes, push it to your portfolio.</p>
+        </div>
+
+        <div style="display:flex; gap:0.75rem; margin-bottom:1rem; flex-wrap:wrap; align-items:center;">
+          <button class="btn-analyze" style="flex:none;" onclick="showPipelineForm()">+ Add Deal</button>
+          <span id="pl-status" style="font-size:12px; color:#4ee2ff;"></span>
+        </div>
+
+        <!-- Add form -->
+        <div id="pl-form" class="work-card" style="display:none; margin-bottom:1rem;">
+          <div class="card-label">Add Deal to Pipeline</div>
+          <div class="input-row">
+            <div>
+              <label>Property / label</label>
+              <input type="text" id="pl-label" placeholder="812 N Brevard St">
+            </div>
+            <div>
+              <label>Stage</label>
+              <select id="pl-stage">
+                <option value="prospect">Prospect</option>
+                <option value="offer">Offer Made</option>
+                <option value="under_contract">Under Contract</option>
+                <option value="closed">Closed</option>
+                <option value="passed">Passed</option>
+              </select>
+            </div>
+          </div>
+          <div class="input-row">
+            <div>
+              <label>Offer / Target Price</label>
+              <input type="number" id="pl-offer" placeholder="135000">
+            </div>
+            <div>
+              <label>Notes</label>
+              <input type="text" id="pl-notes" placeholder="Seller motivated, needs roof">
+            </div>
+          </div>
+          <div style="display:flex; gap:0.75rem; margin-top:0.5rem;">
+            <button class="btn-analyze" onclick="addPipelineDeal()">Add →</button>
+            <button class="sample-btn" onclick="hidePipelineForm()">Cancel</button>
+          </div>
+        </div>
+
+        <div id="pl-board"></div>
+
+      </div>
+
       <!-- ============ DEAL FINDER DETAIL DRAWER ============ -->
       <div class="df-drawer-backdrop" id="df-drawer-backdrop" onclick="closeDrawer()"></div>
       <aside class="df-drawer" id="df-drawer">
@@ -3252,6 +3305,7 @@
     'sensitivity': 'Sensitivity',
     'deal-scout': 'AI Deal Scout',
     'portfolio': 'Portfolio',
+    'pipeline': 'Pipeline',
     'deal-finder': 'Lead Importer',
     'settings': 'Settings',
     'admin-users': 'User Management'
@@ -3287,6 +3341,7 @@
     if (view === 'rehab') loadRehab();
     if (view === 'sensitivity') runSensitivity();
     if (view === 'portfolio') loadPortfolio();
+    if (view === 'pipeline') loadPipeline();
 
     applyFeatureFlags();
   }
@@ -4303,9 +4358,9 @@ Return ONLY the JSON object.`;
           <p style="margin-top:0.5rem">At a ${taxRate}% marginal rate, that's <strong style="color:#4ee2ff">${fmt(annualTaxSavings)}/yr</strong> in tax savings — a ${pct(taxSavingsROI)} return on your ${fmt(totalCashIn)} cash invested, before any cash flow or appreciation.</p>
         </div>` : ''}
 
-        <div style="margin-top:1rem; padding-top:1rem; border-top:0.5px solid var(--border); text-align:center;">
-          <button class="btn-analyze" onclick="downloadDealSummary()" style="width:auto; padding-left:1.5rem; padding-right:1.5rem;">📄 Download Investor Summary</button>
-          <div style="font-size:11px; color:var(--text-muted); margin-top:6px;">Opens a clean one-page summary you can save as PDF or print to share.</div>
+        <div style="margin-top:1rem; padding-top:1rem; border-top:0.5px solid var(--border); text-align:center; display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+          <button class="btn-analyze" onclick="downloadDealSummary()" style="width:auto; padding-left:1.5rem; padding-right:1.5rem;">📄 Download Summary</button>
+          <button class="sample-btn" onclick="addAnalyzedDealToPipeline()" style="width:auto; padding-left:1.5rem; padding-right:1.5rem;">📋 Add to Pipeline</button>
         </div>
       `;
 
@@ -6062,6 +6117,148 @@ Respond as DEAL SCOUT with a direct, practical answer to the investor's latest q
 
     // Trigger the browser print dialog (offers Save as PDF)
     window.print();
+  }
+
+  async function addAnalyzedDealToPipeline() {
+    const a = window._lastAnalysis;
+    if (!a) { alert('Run a deal analysis first.'); return; }
+    const label = a.address || 'Deal from analyzer';
+    try {
+      await rwApi('add_pipeline', {
+        stage: 'prospect',
+        offer_price: a.maxOffer70 || a.price || null,
+        notes: 'Added from Deal Analyzer · Grade ' + (a.ai?.grade || '—'),
+        label: label
+      });
+      alert('✓ Added to your pipeline as a Prospect.');
+    } catch (err) {
+      alert('Could not add to pipeline: ' + err.message);
+    }
+  }
+
+  // ============================================================
+  // ============ DEAL PIPELINE =================================
+  // ============================================================
+
+  let plDeals = [];
+
+  const PL_STAGES = [
+    { key: 'prospect',       label: 'Prospect' },
+    { key: 'offer',          label: 'Offer Made' },
+    { key: 'under_contract', label: 'Under Contract' },
+    { key: 'closed',         label: 'Closed' },
+    { key: 'passed',         label: 'Passed' }
+  ];
+
+  async function loadPipeline() {
+    try {
+      const { data } = await rwApi('get_pipeline');
+      plDeals = data || [];
+      renderPipeline();
+    } catch (err) {
+      const s = document.getElementById('pl-status');
+      if (s) s.textContent = 'Could not load pipeline: ' + err.message;
+      console.error('loadPipeline error', err);
+    }
+  }
+
+  function showPipelineForm() { const f = document.getElementById('pl-form'); if (f) f.style.display = 'block'; }
+  function hidePipelineForm() {
+    const f = document.getElementById('pl-form');
+    if (f) f.style.display = 'none';
+    ['pl-label','pl-offer','pl-notes'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  }
+
+  async function addPipelineDeal() {
+    const label = document.getElementById('pl-label').value.trim();
+    const stage = document.getElementById('pl-stage').value;
+    const offer = parseFloat(document.getElementById('pl-offer').value) || null;
+    const notes = document.getElementById('pl-notes').value.trim() || null;
+    if (!label) {
+      document.getElementById('pl-status').textContent = 'Enter a property label.';
+      return;
+    }
+    const status = document.getElementById('pl-status');
+    status.textContent = 'Saving…';
+    try {
+      const { data } = await rwApi('add_pipeline', { stage, offer_price: offer, notes, label });
+      plDeals.unshift(data);
+      hidePipelineForm();
+      renderPipeline();
+      status.textContent = '✓ Deal added.';
+      setTimeout(() => status.textContent = '', 3000);
+    } catch (err) {
+      status.textContent = 'Save failed: ' + err.message;
+    }
+  }
+
+  async function movePipelineDeal(id, newStage) {
+    try {
+      await rwApi('update_pipeline', { id, updates: { stage: newStage } });
+      const deal = plDeals.find(d => d.id === id);
+      if (deal) deal.stage = newStage;
+      renderPipeline();
+    } catch (err) {
+      document.getElementById('pl-status').textContent = 'Move failed: ' + err.message;
+    }
+  }
+
+  async function deletePipelineDeal(id) {
+    if (!confirm('Remove this deal from your pipeline?')) return;
+    try {
+      await rwApi('delete_pipeline', { id });
+      plDeals = plDeals.filter(d => d.id !== id);
+      renderPipeline();
+    } catch (err) {
+      document.getElementById('pl-status').textContent = 'Delete failed: ' + err.message;
+    }
+  }
+
+  function renderPipeline() {
+    const board = document.getElementById('pl-board');
+    if (!board) return;
+    const fmt = n => '$' + Math.round(n || 0).toLocaleString();
+
+    if (plDeals.length === 0) {
+      board.innerHTML = '<div class="result-placeholder"><div class="icon">📋</div><p>No deals in your pipeline yet.<br>Add one above, or send a deal from the Analyzer.</p></div>';
+      return;
+    }
+
+    board.innerHTML = PL_STAGES.map(stage => {
+      const dealsInStage = plDeals.filter(d => d.stage === stage.key);
+      const stageValue = dealsInStage.reduce((a, d) => a + (d.offer_price || 0), 0);
+
+      const cards = dealsInStage.map(d => {
+        const title = d.label || 'Untitled deal';
+        const noteText = d.notes || '';
+        const stageIdx = PL_STAGES.findIndex(s => s.key === d.stage);
+        const prevStage = stageIdx > 0 ? PL_STAGES[stageIdx - 1] : null;
+        const nextStage = stageIdx < PL_STAGES.length - 1 ? PL_STAGES[stageIdx + 1] : null;
+
+        return `
+          <div class="work-card" style="padding:0.75rem 0.85rem; margin-bottom:8px;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
+              <div style="font-size:13px; font-weight:500; color:var(--white);">${title}</div>
+              <button onclick="deletePipelineDeal('${d.id}')" style="background:none; border:none; color:var(--text-muted); font-size:14px; cursor:pointer; line-height:1;">×</button>
+            </div>
+            ${d.offer_price ? `<div style="font-size:12px; color:#4ee2ff; margin-top:2px;">${fmt(d.offer_price)}</div>` : ''}
+            ${noteText ? `<div style="font-size:11px; color:var(--text-muted); margin-top:4px; line-height:1.4;">${noteText}</div>` : ''}
+            <div style="display:flex; gap:6px; margin-top:8px;">
+              ${prevStage ? `<button class="sample-btn" style="font-size:10px; padding:3px 7px;" onclick="movePipelineDeal('${d.id}','${prevStage.key}')">← ${prevStage.label}</button>` : ''}
+              ${nextStage ? `<button class="sample-btn" style="font-size:10px; padding:3px 7px;" onclick="movePipelineDeal('${d.id}','${nextStage.key}')">${nextStage.label} →</button>` : ''}
+            </div>
+          </div>`;
+      }).join('');
+
+      return `
+        <div style="margin-bottom:1.25rem;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; padding-bottom:6px; border-bottom:0.5px solid var(--border);">
+            <span style="font-size:12px; font-weight:600; color:var(--white);">${stage.label}</span>
+            <span style="font-size:11px; color:var(--text-muted);">${dealsInStage.length} ${dealsInStage.length === 1 ? 'deal' : 'deals'}${stageValue > 0 ? ' · ' + fmt(stageValue) : ''}</span>
+          </div>
+          ${dealsInStage.length ? cards : '<div style="font-size:12px; color:var(--text-muted); padding:0.5rem 0;">None</div>'}
+        </div>`;
+    }).join('');
   }
 
   function money(n) { return "$" + n.toLocaleString(); }

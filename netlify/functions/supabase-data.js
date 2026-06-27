@@ -188,6 +188,50 @@ exports.handler = async (event) => {
       return { statusCode: 200, headers, body: JSON.stringify({ ok: true }) };
     }
 
+    // ---- PIPELINE ----
+    if (action === 'get_pipeline') {
+      const { data, error } = await supabase
+        .from('pipeline_stages')
+        .select('*')
+        .eq('user_id', userId)
+        .order('updated_at', { ascending: false });
+      if (error) throw error;
+      return { statusCode: 200, headers, body: JSON.stringify({ data: data || [] }) };
+    }
+
+    if (action === 'add_pipeline') {
+      const record = { user_id: userId, ...payload };
+      const { data, error } = await supabase
+        .from('pipeline_stages')
+        .insert(record)
+        .select()
+        .single();
+      if (error) throw error;
+      return { statusCode: 200, headers, body: JSON.stringify({ data }) };
+    }
+
+    if (action === 'update_pipeline') {
+      const { id, updates } = payload;
+      const { error } = await supabase
+        .from('pipeline_stages')
+        .update(updates)
+        .eq('id', id)
+        .eq('user_id', userId);
+      if (error) throw error;
+      return { statusCode: 200, headers, body: JSON.stringify({ ok: true }) };
+    }
+
+    if (action === 'delete_pipeline') {
+      const { id } = payload;
+      const { error } = await supabase
+        .from('pipeline_stages')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', userId);
+      if (error) throw error;
+      return { statusCode: 200, headers, body: JSON.stringify({ ok: true }) };
+    }
+
     return { statusCode: 400, headers, body: JSON.stringify({ error: 'Unknown action: ' + action }) };
 
   } catch (err) {
