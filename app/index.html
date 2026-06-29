@@ -2885,12 +2885,6 @@
             <label>Avatar Initials</label>
             <input type="text" id="set-avatar" placeholder="AJ" maxlength="2">
 
-            <div class="card-label" style="margin-top: 2rem;">API Configuration</div>
-            <label>Anthropic API Key (Optional Override)</label>
-            <input type="password" id="set-apikey" placeholder="sk-ant-...">
-            <p style="font-size: 0.7rem; color: var(--text-dim); margin-top: -0.5rem; margin-bottom: 1rem;">
-              By default, the app uses the server-side key. Enter a key here to override for your session.
-            </p>
 
             <button class="btn-analyze" onclick="updateSettings()">Save Settings</button>
 
@@ -2939,12 +2933,7 @@
         <div class="modal-h">
           <h3>Almost there...</h3>
         </div>
-        <p style="margin-bottom: 1.5rem; color: var(--text-mid);">One last thing: Do you have an Anthropic API key? (Optional)</p>
-        <label>Anthropic API Key</label>
-        <input type="password" id="ob-apikey" placeholder="sk-ant-...">
-        <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: -0.5rem; margin-bottom: 1.5rem;">
-          We use Claude for lead scoring and valuations. You can add your own key for higher limits, or use our shared key for now.
-        </p>
+        <p style="margin-bottom: 1.5rem; color: var(--text-mid);">You're all set. Click below to start analyzing deals.</p>
         <button class="btn-analyze" onclick="completeOnboarding()">Finish Setup →</button>
       </div>
     </div>
@@ -3065,9 +3054,7 @@
         task_management: true
       }
     },
-    settings: {
-      apiKey: ''
-    },
+    settings: {},
     admin: {
       users: []
     }
@@ -3242,6 +3229,7 @@
       email,
       password,
       options: {
+        emailRedirectTo: window.location.origin + '/app/',
         data: {
           display_name: name,
           avatar_initials: name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
@@ -3255,7 +3243,9 @@
       btn.disabled = false;
       btn.textContent = "Sign Up";
     } else {
-      alert("Check your email for confirmation!");
+      alert("Check your email to confirm your account, then you'll land right back here.");
+      btn.disabled = false;
+      btn.textContent = "Sign Up";
     }
   }
 
@@ -3271,9 +3261,6 @@
   }
 
   async function completeOnboarding() {
-    const apiKey = document.getElementById('ob-apikey').value.trim();
-    if (apiKey) rwData.settings.apiKey = apiKey;
-
     if (rwSupabase && rwData.user.id) {
       await rwSupabase.from('profiles').update({
         role: rwData.user.role,
@@ -3365,38 +3352,19 @@
       }
     }
 
-    // AI Assistant Tools
+    // AI Assistant Tools / Deal Analyzer — ungated as of Brief #17.
+    // The Deal Analyzer is the core feature of the app; every authenticated
+    // user gets access. Defensive cleanup if a lock was added in a prior
+    // session before this change shipped.
     const aiView = document.getElementById('view-ai-tools');
     if (aiView) {
-      if (!f.ai_assistant) {
-        if (!aiView.querySelector('.feature-lock')) {
-          const lock = document.createElement('div');
-          lock.className = 'feature-lock';
-          lock.innerHTML = `<div class="lock-icon">🤖</div><h3>AI Assistant Disabled</h3><p>This feature is not enabled on your account. Contact support to upgrade.</p>`;
-          aiView.appendChild(lock);
-        }
-      } else {
-        const lock = aiView.querySelector('.feature-lock');
-        if (lock) lock.remove();
-      }
+      const lock = aiView.querySelector('.feature-lock');
+      if (lock) lock.remove();
     }
-
-    // Dashboard AI chips
     const aiSuggest = document.querySelector('.ai-suggest');
     if (aiSuggest) {
-      if (!f.ai_assistant) {
-        if (!aiSuggest.querySelector('.feature-lock')) {
-          const lock = document.createElement('div');
-          lock.className = 'feature-lock';
-          lock.style.padding = '1rem';
-          lock.innerHTML = `<div class="lock-icon" style="font-size:1.5rem">🔒</div><p style="font-size:0.7rem">AI Assistant Disabled</p>`;
-          aiSuggest.style.position = 'relative';
-          aiSuggest.appendChild(lock);
-        }
-      } else {
-        const lock = aiSuggest.querySelector('.feature-lock');
-        if (lock) lock.remove();
-      }
+      const lock = aiSuggest.querySelector('.feature-lock');
+      if (lock) lock.remove();
     }
 
     // Valuation Tool (inside AI tools)
@@ -3538,17 +3506,11 @@
   // ============ CLAUDE API HELPER ============
   // Calls go through a Netlify serverless function so the API key stays server-side.
   async function callClaude(prompt, maxTokens = 1000, images = null) {
-    // If user provided their own API key, we should ideally use it.
-    // However, the netlify function is designed to use the env var.
-    // If the user provided a key, we'll pass it in a header that the function could potentially use.
-    const headers = { "Content-Type": "application/json" };
-    if (rwData.settings.apiKey) {
-      headers["X-API-Key"] = rwData.settings.apiKey;
-    }
-
+    // All Claude calls route server-side through the Netlify proxy,
+    // which uses ANTHROPIC_API_KEY from env. No client-side key path.
     const response = await fetch("/.netlify/functions/claude", {
       method: "POST",
-      headers: headers,
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         prompt,
         max_tokens: maxTokens,
@@ -3826,14 +3788,12 @@ SOURCE: ${source}
     document.getElementById('set-name').value = rwData.user.name;
     document.getElementById('set-role').value = rwData.user.role;
     document.getElementById('set-avatar').value = rwData.user.avatar;
-    document.getElementById('set-apikey').value = rwData.settings.apiKey || '';
   }
 
   async function updateSettings() {
     rwData.user.name = document.getElementById('set-name').value.trim();
     rwData.user.role = document.getElementById('set-role').value.trim();
     rwData.user.avatar = document.getElementById('set-avatar').value.trim().toUpperCase();
-    rwData.settings.apiKey = document.getElementById('set-apikey').value.trim();
 
     if (rwSupabase && rwData.user.id) {
       await rwSupabase.from('profiles').update({
