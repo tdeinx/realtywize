@@ -2,10 +2,20 @@
 // Keeps ANTHROPIC_API_KEY server-side. Set it in Netlify:
 // Site configuration → Environment variables → ANTHROPIC_API_KEY.
 
+const { createClient } = require('@supabase/supabase-js');
+
+// Admin client for verifying user JWTs. Uses the service-role key
+// (server-side only). SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY come
+// from Netlify env — same vars supabase-data.js already relies on.
+const supabaseAdmin = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
 const json = (statusCode, body) => ({
@@ -20,6 +30,23 @@ exports.handler = async (event) => {
   }
   if (event.httpMethod !== "POST") {
     return json(405, { error: "Method not allowed. Use POST." });
+  }
+
+  // Verify the caller's Supabase JWT before spending any Anthropic
+  // tokens. Without this, anyone who finds the endpoint URL can
+  // pump requests through it and rack up the bill.
+  const authHeader = event.headers.authorization || event.headers.Authorization || '';
+  const token = authHeader.replace(/^Bearer\s+/i, '').trim();
+  if (!token) {
+    return json(401, { error: "Missing Authorization header." });
+  }
+  try {
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+    if (authError || !user) {
+      return json(401, { error: "Invalid or expired token." });
+    }
+  } catch (err) {
+    return json(401, { error: "Auth check failed: " + (err && err.message || err) });
   }
 
   const apiKey = event.headers["x-api-key"] || process.env.ANTHROPIC_API_KEY;

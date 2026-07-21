@@ -3508,9 +3508,20 @@
   async function callClaude(prompt, maxTokens = 1000, images = null) {
     // All Claude calls route server-side through the Netlify proxy,
     // which uses ANTHROPIC_API_KEY from env. No client-side key path.
+    // Attach the Supabase session JWT so the proxy can verify the
+    // caller — without this, the endpoint is open-world and anyone
+    // can pump requests through it.
+    const session = rwSupabase && rwSupabase.auth
+      ? (rwSupabase.auth.session ? rwSupabase.auth.session() : (await rwSupabase.auth.getSession()).data.session)
+      : null;
+    const token = session?.access_token;
+    if (!token) throw new Error('Not authenticated — please log in to use AI features.');
     const response = await fetch("/.netlify/functions/claude", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + token
+      },
       body: JSON.stringify({
         prompt,
         max_tokens: maxTokens,

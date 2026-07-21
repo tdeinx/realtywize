@@ -5,6 +5,29 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+// Strip fields the client should never be allowed to set on a write.
+// user_id in particular: without this, a payload of
+//   { user_id: '<victim-uuid>' }
+// would overwrite the server-set user_id (because ...payload comes
+// after user_id in the object spread), letting any authenticated
+// caller attribute rows to any other user — the proxy uses the
+// service-role key which bypasses RLS.
+const DENYLIST_KEYS = ['user_id', 'id', 'created_at', 'updated_at'];
+const sanitizePayload = (p) => {
+  if (!p || typeof p !== 'object') return {};
+  const out = {};
+  for (const k of Object.keys(p)) {
+    if (!DENYLIST_KEYS.includes(k)) out[k] = p[k];
+  }
+  return out;
+};
+
+// Cap runaway payload sizes. Anyone authenticated could otherwise
+// send 100k lead objects in a single upsert_leads call, blowing past
+// the 10s Netlify function limit and beating up the Supabase
+// connection pool.
+const MAX_LEADS_PER_REQUEST = 5000;
+
 exports.handler = async (event) => {
   const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -61,10 +84,10 @@ exports.handler = async (event) => {
         .limit(1)
         .single();
 
-      const record = { user_id: userId, ...payload };
+      const record = { user_id: userId, ...sanitizePayload(payload) };
       let result;
       if (existing?.id) {
-        result = await supabase.from('buy_box_profiles').update(record).eq('id', existing.id).select().single();
+        result = await supabase.from('buy_box_profiles').update(record).eq('id', existing.id).eq('user_id', userId).select().single();
       } else {
         result = await supabase.from('buy_box_profiles').insert(record).select().single();
       }
@@ -84,8 +107,18 @@ exports.handler = async (event) => {
     }
 
     if (action === 'upsert_leads') {
+      const leadsIn = Array.isArray(payload.leads) ? payload.leads : [];
+      if (leadsIn.length > MAX_LEADS_PER_REQUEST) {
+        return {
+          statusCode: 413,
+          headers,
+          body: JSON.stringify({
+            error: 'Too many leads in one request. Max ' + MAX_LEADS_PER_REQUEST + ' — got ' + leadsIn.length + '. Split into smaller batches.'
+          })
+        };
+      }
       // payload.leads = array of lead objects
-      const records = (payload.leads || []).map(l => ({
+      const records = leadsIn.map(l => ({
         user_id:             userId,
         local_id:            l.id,
         address:             l.address || null,
@@ -114,12 +147,16 @@ exports.handler = async (event) => {
 
     if (action === 'update_lead') {
       const { leadId, updates } = payload;
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('investor_leads')
-        .update(updates)
+        .update(sanitizePayload(updates))
         .eq('id', leadId)
-        .eq('user_id', userId);
+        .eq('user_id', userId)
+        .select('id');
       if (error) throw error;
+      if (!data || data.length === 0) {
+        return { statusCode: 404, headers, body: JSON.stringify({ error: 'Lead not found or not owned by caller.' }) };
+      }
       return { statusCode: 200, headers, body: JSON.stringify({ ok: true }) };
     }
 
@@ -134,7 +171,7 @@ exports.handler = async (event) => {
 
     // ---- DEAL ANALYSES ----
     if (action === 'save_analysis') {
-      const record = { user_id: userId, ...payload };
+      const record = { user_id: userId, ...sanitizePayload(payload) };
       const { data, error } = await supabase
         .from('deal_analyses')
         .insert(record)
@@ -167,7 +204,7 @@ exports.handler = async (event) => {
     }
 
     if (action === 'add_portfolio') {
-      const record = { user_id: userId, ...payload };
+      const record = { user_id: userId, ...sanitizePayload(payload) };
       const { data, error } = await supabase
         .from('portfolio')
         .insert(record)
@@ -200,7 +237,7 @@ exports.handler = async (event) => {
     }
 
     if (action === 'add_pipeline') {
-      const record = { user_id: userId, ...payload };
+      const record = { user_id: userId, ...sanitizePayload(payload) };
       const { data, error } = await supabase
         .from('pipeline_stages')
         .insert(record)
@@ -212,12 +249,16 @@ exports.handler = async (event) => {
 
     if (action === 'update_pipeline') {
       const { id, updates } = payload;
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('pipeline_stages')
-        .update(updates)
+        .update(sanitizePayload(updates))
         .eq('id', id)
-        .eq('user_id', userId);
+        .eq('user_id', userId)
+        .select('id');
       if (error) throw error;
+      if (!data || data.length === 0) {
+        return { statusCode: 404, headers, body: JSON.stringify({ error: 'Pipeline entry not found or not owned by caller.' }) };
+      }
       return { statusCode: 200, headers, body: JSON.stringify({ ok: true }) };
     }
 
